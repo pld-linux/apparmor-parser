@@ -47,7 +47,7 @@ rm -rf $RPM_BUILD_ROOT
 %files -f %{name}.lang
 %defattr(644,root,root,755)
 %doc README
-/sbin/apparmor_parser
+%attr(755,root,root) /sbin/apparmor_parser
 %dir %{_sysconfdir}/apparmor
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apparmor/subdomain.conf
 #%attr(754,root,root) /etc/rc.d/init.d/aaeventd
