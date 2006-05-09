@@ -1,13 +1,14 @@
 %define		_ver 2.0
 %define		_svnrel 25
 Summary:	AppArmor userlevel parser utility
+Summary(pl):	Narzêdzie przestrzeni u¿ytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	%{_ver}.%{_svnrel}
 Release:	0.1
+License:	GPL
 Group:		Applications/System
 Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/Development%20-%20April%20Snapshot/%{name}-%{_ver}-%{_svnrel}.tar.gz
 # Source0-md5:	1486ed6062435ff82340d6d9967b4df6
-License:	GPL
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bison
 BuildRequires:	flex
@@ -15,12 +16,15 @@ BuildRequires:	gettext-devel
 BuildRequires:	libcap-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
-%define apparmor_bin_prefix /lib/apparmor
-
 %description
 AppArmor Parser is a userlevel program that is used to load in program
 profiles to the AppArmor Security kernel module. This package is part
 of a suite of tools that used to be named SubDomain.
+
+%description -l pl
+AppArmor Parser to program przestrzeni u¿ytkownika s³u¿±cy do
+wczytywania profili programów dla modu³u bezpieczeñstwa AppArmor j±dra
+Linuksa. Ten pakiet jest czê¶ci± zestawu narzêdzi nazywanych SubDomain.
 
 %prep
 %setup -q -n %{name}-%{_ver}
