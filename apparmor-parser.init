@@ -8,10 +8,6 @@
 # Source function library
 . /etc/rc.d/init.d/functions
 
-usage() {
-	echo "Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status|kill}"
-}
-
 sd_log_skipped_msg() {
 	echo -n "$*"
 	#success
@@ -44,31 +40,32 @@ sd_action() {
 
 . /etc/apparmor/rc.apparmor.functions
 
+RETVAL=0
 case "$1" in
-	start)
-		subdomain_start
-		;;
-	stop)
-		subdomain_stop
-		;;
-	restart|reload|force-reload)
-		subdomain_restart
-		;;
-	try-restart)
-		subdomain_try_restart
-		;;
-	debug)
-		subdomain_debug
-		;;
-	kill)
-		subdomain_kill
-		;;
-	status)
-		subdomain_status
-		;;
-	*)
-		usage
-		exit 1
-	esac
-exit 0
+start)
+	subdomain_start
+	;;
+stop)
+	subdomain_stop
+	;;
+restart|reload|force-reload)
+	subdomain_restart
+	;;
+try-restart)
+	subdomain_try_restart
+	;;
+debug)
+	subdomain_debug
+	;;
+kill)
+	subdomain_kill
+	;;
+status)
+	subdomain_status
+	;;
+*)
+	msg_usage "$0 {start|stop|restart|try-restart|reload|force-reload|status|kill}"
+	exit 3
+esac
 
+exit $RETVAL
