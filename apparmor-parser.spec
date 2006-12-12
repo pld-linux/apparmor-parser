@@ -1,5 +1,5 @@
 %define		_ver 2.0
-%define		_svnrel 133
+%define		_svnrel 150
 Summary:	AppArmor userlevel parser utility
 Summary(pl):	Narzêdzie przestrzeni u¿ytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
@@ -7,8 +7,8 @@ Version:	%{_ver}.%{_svnrel}
 Release:	0.1
 License:	GPL
 Group:		Applications/System
-Source0:	http://forgeftp.novell.com/apparmor/Development%20-%20September%20snapshot/%{name}-%{_ver}-%{_svnrel}.tar.gz
-# Source0-md5:	18b339651afa29af9131f2e4ca718a08
+Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/Development%20-%20October%20Snapshot/%{name}-%{_ver}-%{_svnrel}.tar.gz
+# Source0-md5:	cbb25435e4353b10b5fdd96f80c854b9
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bash
 BuildRequires:	bison
