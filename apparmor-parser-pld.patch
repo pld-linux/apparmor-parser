@@ -123,7 +123,7 @@ diff -urN apparmor-parser-2.0.org/rc.apparmor.functions apparmor-parser-2.0/rc.a
  
 -function remove_profiles() {
 +remove_profiles() {
-+	set -x
++	
  	# removing profiles as we directly read from subdomainfs
  	# doesn't work, since we are removing entries which screws up
  	# our position.  Lets hope there are never enough profiles to
