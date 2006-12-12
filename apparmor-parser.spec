@@ -11,6 +11,7 @@ Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/Developm
 # Source0-md5:	cbb25435e4353b10b5fdd96f80c854b9
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
+Patch1:		%{name}-no-fdopendir.patch
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bash
 BuildRequires:	bison
@@ -33,6 +34,8 @@ Linuksa. Ten pakiet jest czê¶ci± zestawu narzêdzi nazywanych SubDomain.
 %prep
 %setup -q -n %{name}-%{_ver}
 %patch0 -p1
+echo 'int main() { fdopendir(0); }' > test-fdopendir.c
+%{__cc} test-fdopendir.c -o test-fdopendir || patch -p1 < %{PATCH1} || exit 1
 
 %build
 %{__make} \
