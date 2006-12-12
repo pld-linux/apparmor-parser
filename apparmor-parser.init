@@ -1,0 +1,74 @@
+#!/bin/sh
+# chkconfig: 2345 01 99
+# description: AppArmor rc file. This rc script inserts the apparmor \
+# 	       module and runs the parser on the /etc/apparmor.d/ \
+#	       directory.
+#
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+usage() {
+	echo "Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status|kill}"
+}
+
+sd_log_skipped_msg() {
+	echo -n "$*"
+	#success
+	echo
+}
+sd_log_success_msg() {
+	echo -n "$*"
+	#success
+	echo
+}
+
+sd_log_warning_msg() {
+	echo -n "$*"
+	#warning
+	echo
+}
+
+sd_log_failure_msg() {
+	echo -n "$*"
+	#failure
+	echo
+}
+
+sd_action() {
+	STRING=$1
+	shift
+	run_cmd "$STRING" "$@"
+	return $?
+}
+
+. /etc/apparmor/rc.apparmor.functions
+
+case "$1" in
+	start)
+		subdomain_start
+		;;
+	stop)
+		subdomain_stop
+		;;
+	restart|reload|force-reload)
+		subdomain_restart
+		;;
+	try-restart)
+		subdomain_try_restart
+		;;
+	debug)
+		subdomain_debug
+		;;
+	kill)
+		subdomain_kill
+		;;
+	status)
+		subdomain_status
+		;;
+	*)
+		usage
+		exit 1
+	esac
+exit 0
+

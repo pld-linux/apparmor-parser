@@ -1,0 +1,209 @@
+diff -urN apparmor-parser-2.0.org/rc.apparmor.functions apparmor-parser-2.0/rc.apparmor.functions
+--- apparmor-parser-2.0.org/rc.apparmor.functions	2006-10-12 18:56:46.000000000 +0200
++++ apparmor-parser-2.0/rc.apparmor.functions	2006-12-12 17:38:38.000000000 +0100
+@@ -53,7 +53,7 @@
+ 
+ if [ -f "${APPARMOR_CONF}" ] ; then
+ 	#parse the conf file to see what we should do
+-	source "${APPARMOR_CONF}"
++	. "${APPARMOR_CONF}"
+ fi
+ 
+ if [ -f /sbin/apparmor_parser ] ; then
+@@ -102,7 +102,7 @@
+ # keep exit status from parser during profile load.  0 is good, 1 is bad
+ STATUS=0
+ 
+-function parse_profiles() {	
++parse_profiles() {	
+ 	# get parser arg
+ 	case "$1" in
+ 		load)
+@@ -160,7 +160,7 @@
+ 	fi
+ }
+ 
+-function profiles_names_list() {	
++profiles_names_list() {	
+ 	# run the parser on all of the apparmor profiles
+ 	TMPFILE=$1
+ 	if [ ! -f "$PARSER" ]; then
+@@ -188,7 +188,7 @@
+ 	done
+ }
+ 
+-function is_subdomainfs_mounted() {
++is_subdomainfs_mounted() {
+ 	if grep -q subdomainfs /proc/filesystems ; then
+ 		if grep -q subdomainfs /proc/mounts && \
+ 		   [ -f "${SUBDOMAINFS_MOUNTPOINT}/profiles" ]; then
+@@ -211,7 +211,7 @@
+ 	return 1
+ }
+ 
+-function mount_subdomainfs() {
++mount_subdomainfs() {
+ 	# for backwords compatibility
+ 	if grep -q subdomainfs /proc/filesystems ; then
+ 		if [ "X" != "X${SUBDOMAINFS_MOUNTPOINT}" ]; then
+@@ -239,14 +239,14 @@
+ 	return 0
+ }
+ 
+-function unmount_subdomainfs() {
++unmount_subdomainfs() {
+ 	SUBDOMAINFS=$(grep subdomainfs /proc/mounts  | cut -d" " -f2 2> /dev/null)
+ 	if [ "X" != "X${SUBDOMAINFS}" ]; then
+ 		sd_action "Unmounting subdomainfs" umount ${SUBDOMAINFS}
+ 	fi
+ }
+ 
+-function rebuild_subdomain() {
++rebuild_subdomain() {
+ 	if [ -d "$SUBDOMAIN_SRC" ] ; then
+ 		# only try to rebuild for the running kernel
+ 		cd "$SUBDOMAIN_SRC"
+@@ -280,7 +280,7 @@
+ 	fi
+ }
+ 
+-function failstop_system() {
++failstop_system() {
+ 	level=$(runlevel | cut -d" " -f2)
+ 	if [ $level -ne "1" ] ; then
+ 		sd_log_failure_msg "- could not start AppArmor.  Changing to runlevel 1"
+@@ -291,7 +291,7 @@
+ 	return -1
+ }
+ 
+-function module_panic() {
++module_panic() {
+ 	# the module failed to load, determine what action should be taken
+ 
+ 	case "$SUBDOMAIN_MODULE_PANIC" in
+@@ -315,7 +315,7 @@
+ 	esac
+ }
+ 
+-function load_module() {
++load_module() {
+ 	if modinfo -F filename apparmor > /dev/null 2>&1 ; then
+ 		MODULE=apparmor
+ 	elif modinfo -F filename subdomain > /dev/null 2>&1 ; then
+@@ -335,7 +335,7 @@
+ 	fi
+ }	
+ 
+-function start_sd_event() {
++start_sd_event() {
+ 	if [ -x "$AA_EV_BIN" -a "${APPARMOR_ENABLE_AAEVENTD}" = "yes" ] ; then
+ 		sd_action "Starting AppArmor Event daemon" startproc -f -p $AA_EV_PIDFILE $AA_EV_BIN -p $AA_EV_PIDFILE
+ 	elif [ -x "$SD_EV_BIN" -a "${APPARMOR_ENABLE_AAEVENTD}" = "yes" ] ; then
+@@ -343,7 +343,7 @@
+ 	fi
+ }
+ 
+-function stop_sd_event() {
++stop_sd_event() {
+ 	if [ -x "$AA_EV_BIN" -a -f "$AA_EV_PIDFILE" ] ; then
+ 		sd_action "Shutting down AppArmor Event daemon" /sbin/killproc -G -p $AA_EV_PIDFILE -INT $AA_EV_BIN
+ 	fi
+@@ -352,7 +352,7 @@
+ 	fi
+ }
+ 
+-function subdomain_start() {
++subdomain_start() {
+ 	if ! grep -qE "^(subdomain|apparmor)[[:space:]]" /proc/modules ; then
+ 		load_module
+ 		rc=$?
+@@ -383,7 +383,8 @@
+ 	fi
+ }
+ 
+-function remove_profiles() {
++remove_profiles() {
++	set -x
+ 	# removing profiles as we directly read from subdomainfs
+ 	# doesn't work, since we are removing entries which screws up
+ 	# our position.  Lets hope there are never enough profiles to
+@@ -404,7 +405,8 @@
+ 	fi
+ 
+ 	retval=0
+-	IFS=$'\n' && for profile in $(sed -e "s/ (\(enforce\|complain\))$//" "$SFS_MOUNTPOINT/profiles") ; do
++	cat "$SFS_MOUNTPOINT/profiles" | while read line; do
++		profile=$(echo "$line" | sed -e "s/ (\(enforce\|complain\))$//")
+ 		echo "\"$profile\" { }" | $PARSER -R >/dev/null
+ 		rc=$?
+ 		if [ ${rc} -ne 0 ] ; then 
+@@ -418,13 +420,13 @@
+ 	fi	
+ }
+ 
+-function subdomain_stop() {
++subdomain_stop() {
+ 	stop_sd_event
+ 	echo -n "Unloading AppArmor profiles "
+ 	remove_profiles
+ }
+ 
+-function subdomain_kill() {
++subdomain_kill() {
+ 	stop_sd_event
+ 	unmount_subdomainfs
+ 	if grep -qE "^apparmor[[:space:]]" /proc/modules ; then
+@@ -437,7 +439,7 @@
+ 	sd_action "Unloading AppArmor modules" /sbin/modprobe -r $MODULE
+ }
+ 
+-function __subdomain_restart() {
++__subdomain_restart() {
+ 	if [ ! -w "$SFS_MOUNTPOINT/.load" ] ; then
+ 		sd_log_failure_msg "Loading AppArmor profiles - failed, Do you have the correct privileges?"
+ 		return 4
+@@ -459,7 +461,7 @@
+ 	return 0
+ }
+ 
+-function subdomain_restart() {
++subdomain_restart() {
+ 	if ! grep -qE "^(subdomain|apparmor)[[:space:]]" /proc/modules ; then
+ 		subdomain_start
+ 		rc=$?
+@@ -479,7 +481,7 @@
+ 	return $rc
+ }
+ 
+-function subdomain_try_restart() {
++subdomain_try_restart() {
+ 	if ! grep -qE "^(subdomain|apparmor)[[:space:]]" /proc/modules ; then
+ 		return 1
+ 	fi
+@@ -493,7 +495,7 @@
+ 	return $rc
+ }
+ 
+-function subdomain_debug() {
++subdomain_debug() {
+ 	subdomain_kill
+ 	load_module "subdomain_debug=1"
+ 	mount_subdomainfs
+@@ -501,7 +503,7 @@
+ 	parse_profiles load
+ }
+ 
+-function configure_owlsm () {
++configure_owlsm () {
+ 	if [ "${SUBDOMAIN_ENABLE_OWLSM}" = "yes" -a -f ${SFS_MOUNTPOINT}/control/owlsm ] ; then
+ 		# Sigh, the "sh -c" is necessary for the SuSE sd_action
+ 		# and it can't be abstracted out as a seperate function, as
+@@ -513,7 +515,7 @@
+ 	fi
+ }
+ 
+-function subdomain_status () {
++subdomain_status () {
+ 	if test -x ${AA_STATUS} ; then
+ 		${AA_STATUS} --verbose
+ 		return $?
