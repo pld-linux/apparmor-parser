@@ -1,12 +1,33 @@
-diff -urN apparmor-parser-2.0.org/parser_include.c apparmor-parser-2.0/parser_include.c
---- apparmor-parser-2.0.org/parser_include.c	2006-10-12 18:56:46.000000000 +0200
-+++ apparmor-parser-2.0/parser_include.c	2006-12-13 00:33:28.105942250 +0100
-@@ -393,7 +393,7 @@
+Index: parser/parser_include.c
+===================================================================
+--- parser/parser_include.c	(wersja 246)
++++ parser/parser_include.c	(wersja 247)
+@@ -393,8 +393,13 @@
  	}
  
  	if (S_ISDIR(my_stat.st_mode)) {
 -		DIR *dir = fdopendir(fileno(newf));
-+		DIR *dir = opendir(buf);
++		DIR *dir = NULL;
  		struct dirent *dirent;
++
++		/* XXX - fdopendir not available in glibc < 2.4 */
++		/* dir = fdopendir(fileno(newf)); */
++		fclose(newf);
++		dir = opendir(buf);
  		if (!dir) {
  			retval = 1;
+ 			goto out;
+Index: parser/apparmor-parser.spec.in
+===================================================================
+--- parser/apparmor-parser.spec.in	(wersja 246)
++++ parser/apparmor-parser.spec.in	(wersja 247)
+@@ -150,6 +150,9 @@
+ %endif
+ 
+ %changelog
++* Mon Nov 20 2006 - sbeattie@suse.de
++- use fclose();opendir() instead of fdopendir()
++- more translation updates
+ * Fri Nov 10 2006 - sbeattie@suse.de
+ - fix rc.aaeventd to depend on apparmor, not boot.apparmor (#214293)
+ * Wed Nov  8 2006 - sbeattie@suse.de
