@@ -34,8 +34,7 @@ Linuksa. Ten pakiet jest czê¶ci± zestawu narzêdzi nazywanych SubDomain.
 %prep
 %setup -q -n %{name}-%{_ver}
 %patch0 -p1
-echo 'int main() { fdopendir(0); }' > test-fdopendir.c
-%{__cc} test-fdopendir.c -o test-fdopendir || patch -p1 < %{PATCH1} || exit 1
+%patch1 -p1
 
 %build
 %{__make} \
