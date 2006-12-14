@@ -18,7 +18,7 @@ BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
 BuildRequires:	libcap-devel
-BuildRequires:	perl-Test-Harness
+BuildRequires:	perl-Test-Harness >= 2.64
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
