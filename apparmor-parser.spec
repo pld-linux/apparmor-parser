@@ -18,7 +18,6 @@ Patch1:		%{name}-no-fdopendir.patch
 Patch2:		%{name}-avoid-pushpop.patch
 Patch3:		%{name}-init-args.patch
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
-BuildRequires:	bash
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
@@ -46,7 +45,6 @@ SubDomain.
 
 %build
 %{__make} \
-	SHELL=/bin/bash \
 	CC="%{__cc}" \
 	CFLAGS="%{rpmcflags}"
 
