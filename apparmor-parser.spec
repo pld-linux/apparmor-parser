@@ -1,10 +1,13 @@
+
+%bcond_without	tests
+
 %define		_ver 2.0
 %define		_svnrel 150
 Summary:	AppArmor userlevel parser utility
 Summary(pl):	Narzêdzie przestrzeni u¿ytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	%{_ver}.%{_svnrel}
-Release:	0.2
+Release:	0.3
 License:	GPL
 Group:		Applications/System
 Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/Development%20-%20October%20Snapshot/%{name}-%{_ver}-%{_svnrel}.tar.gz
@@ -12,6 +15,8 @@ Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/Developm
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 Patch1:		%{name}-no-fdopendir.patch
+Patch2:		%{name}-avoid-pushpop.patch
+Patch3:		%{name}-init-args.patch
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bash
 BuildRequires:	bison
@@ -29,18 +34,23 @@ of a suite of tools that used to be named SubDomain.
 %description -l pl
 AppArmor Parser to program przestrzeni u¿ytkownika s³u¿±cy do
 wczytywania profili programów dla modu³u bezpieczeñstwa AppArmor j±dra
-Linuksa. Ten pakiet jest czê¶ci± zestawu narzêdzi nazywanych SubDomain.
+Linuksa. Ten pakiet jest czê¶ci± zestawu narzêdzi nazywanych
+SubDomain.
 
 %prep
 %setup -q -n %{name}-%{_ver}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p2
+%patch3 -p2
 
 %build
 %{__make} \
 	SHELL=/bin/bash \
 	CC="%{__cc}" \
 	CFLAGS="%{rpmcflags}"
+
+%{?with_tests:%{__make} tests}
 
 %install
 rm -rf $RPM_BUILD_ROOT
