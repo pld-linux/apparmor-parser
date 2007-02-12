@@ -4,7 +4,7 @@
 %define		_ver 2.0
 %define		_svnrel 150
 Summary:	AppArmor userlevel parser utility
-Summary(pl.UTF-8):   Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
+Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	%{_ver}.%{_svnrel}
 Release:	0.3
