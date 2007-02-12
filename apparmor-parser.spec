@@ -4,7 +4,7 @@
 %define		_ver 2.0
 %define		_svnrel 150
 Summary:	AppArmor userlevel parser utility
-Summary(pl):	Narzêdzie przestrzeni u¿ytkownika do przetwarzania AppArmor
+Summary(pl.UTF-8):   NarzÄ™dzie przestrzeni uÅ¼ytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	%{_ver}.%{_svnrel}
 Release:	0.3
@@ -30,10 +30,10 @@ AppArmor Parser is a userlevel program that is used to load in program
 profiles to the AppArmor Security kernel module. This package is part
 of a suite of tools that used to be named SubDomain.
 
-%description -l pl
-AppArmor Parser to program przestrzeni u¿ytkownika s³u¿±cy do
-wczytywania profili programów dla modu³u bezpieczeñstwa AppArmor j±dra
-Linuksa. Ten pakiet jest czê¶ci± zestawu narzêdzi nazywanych
+%description -l pl.UTF-8
+AppArmor Parser to program przestrzeni uÅ¼ytkownika sÅ‚uÅ¼Ä…cy do
+wczytywania profili programÃ³w dla moduÅ‚u bezpieczeÅ„stwa AppArmor jÄ…dra
+Linuksa. Ten pakiet jest czÄ™Å›ciÄ… zestawu narzÄ™dzi nazywanych
 SubDomain.
 
 %prep
