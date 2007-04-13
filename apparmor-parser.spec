@@ -1,28 +1,27 @@
 
 %bcond_without	tests
 
-%define		_ver 2.0
-%define		_svnrel 150
+%define		_ver 2.0.2
+%define		_svnrel 566
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	%{_ver}.%{_svnrel}
 Release:	0.3
+Epoch:		1
 License:	GPL
 Group:		Applications/System
-Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/Development%20-%20October%20Snapshot/%{name}-%{_ver}-%{_svnrel}.tar.gz
-# Source0-md5:	cbb25435e4353b10b5fdd96f80c854b9
+Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/LKML_Submission-April_07/%{name}-%{_ver}-%{_svnrel}.tar.gz
+# Source0-md5:	9851ad9eec502a04b5d01998492e92f7
 Source1:	%{name}.init
-Patch0:		%{name}-pld.patch
-Patch1:		%{name}-no-fdopendir.patch
-Patch2:		%{name}-avoid-pushpop.patch
-Patch3:		%{name}-init-args.patch
+Patch0:		%{name}-init-args.patch
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
 BuildRequires:	libcap-devel
 BuildRequires:	perl-Test-Harness >= 2.64
+BuildRequires:	perl-tools-pod
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -38,14 +37,12 @@ SubDomain.
 
 %prep
 %setup -q -n %{name}-%{_ver}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p2
-%patch3 -p2
+%patch0 -p2
 
 %build
 %{__make} \
 	CC="%{__cc}" \
+	CXX="%{__cxx}" \
 	CFLAGS="%{rpmcflags}"
 
 %{?with_tests:%{__make} tests}
