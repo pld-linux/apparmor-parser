@@ -7,7 +7,7 @@ Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	%{_ver}.%{_svnrel}
-Release:	0.3
+Release:	1
 Epoch:		1
 License:	GPL
 Group:		Applications/System
@@ -19,9 +19,11 @@ URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
+BuildRequires:	latex2html
 BuildRequires:	libcap-devel
 BuildRequires:	perl-Test-Harness >= 2.64
 BuildRequires:	perl-tools-pod
+BuildRequires:	tetex-format-pdflatex
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
