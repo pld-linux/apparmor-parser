@@ -21,7 +21,7 @@ BuildRequires:	flex
 BuildRequires:	gettext-devel
 BuildRequires:	latex2html
 BuildRequires:	libcap-devel
-BuildRequires:	perl-Test-Harness >= 2.64
+BuildRequires:	perl-tools-devel
 BuildRequires:	perl-tools-pod
 BuildRequires:	tetex-format-pdflatex
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
