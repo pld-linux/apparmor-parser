@@ -1,0 +1,13 @@
+Index: rc.apparmor.functions
+===================================================================
+--- rc.apparmor.functions	(wersja 1266)
++++ rc.apparmor.functions	(kopia robocza)
+@@ -375,7 +375,7 @@
+ 
+ 	retval=0
+ 	sed -e "s/ (\(enforce\|complain\))$//" "$SFS_MOUNTPOINT/profiles" | while read profile ; do
+-		if ( echo "${profile}" | grep -q "^/" ] ; then
++		if ( echo "${profile}" | grep -qv "^/" ] ; then
+ 			profile="profile_$profile";
+ 		fi
+ 		echo "\"$profile\" { }" | $PARSER -R >/dev/null
