@@ -1,8 +1,8 @@
 
 %bcond_without	tests
 
-%define		_ver 2.0.2
-%define		_svnrel 757
+%define		_ver 2.1.2
+%define		_svnrel 1088
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
@@ -11,8 +11,8 @@ Release:	1
 Epoch:		1
 License:	GPL
 Group:		Applications/System
-Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/LKML_Submission-June-07/%{name}-%{_ver}-%{_svnrel}.tar.gz
-# Source0-md5:	a53b5b577355c90b8e143fc932aedd59
+Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/AppArmor-%{_ver}/%{name}-%{_ver}-%{_svnrel}.tar.gz
+# Source0-md5:	12b81e6487c21731ff6e60686bf224af
 Source1:	%{name}.init
 Patch0:		%{name}-init-args.patch
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
@@ -62,6 +62,7 @@ install %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/apparmor
 %{__make} -C po install \
 	DESTDIR=$RPM_BUILD_ROOT \
 	NAME=%{name}
+
 %find_lang %{name}
 
 %clean
