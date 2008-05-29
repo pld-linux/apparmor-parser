@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # chkconfig: 2345 01 99
 # description: AppArmor rc file. This rc script inserts the apparmor \
 # 	       module and runs the parser on the /etc/apparmor.d/ \
@@ -9,26 +9,26 @@
 . /etc/rc.d/init.d/functions
 
 aa_log_skipped_msg() {
-	echo -n "$*"
-	#success
-	echo
+	busy
+	fail
+	[ -n "$*" ] && echo "$*"
 }
 aa_log_success_msg() {
-	echo -n "$*"
-	#success
-	echo
+	busy
+	ok
+	[ -n "$*" ] && echo "$*"
 }
 
 aa_log_warning_msg() {
-	echo -n "$*"
-	#warning
-	echo
+	busy
+	fail
+	[ -n "$*" ] && echo "$*"
 }
 
 aa_log_failure_msg() {
-	echo -n "$*"
-	#failure
-	echo
+	busy
+	fail
+	[ -n "$*" ] && echo "$*"
 }
 
 aa_action() {
@@ -43,15 +43,23 @@ aa_action() {
 RETVAL=0
 case "$1" in
 start)
+	msg_starting apparmor
+	started
 	apparmor_start
 	;;
 stop)
+	msg_stopping apparmor
+	started
 	apparmor_stop
 	;;
 restart|reload|force-reload)
+	msg_reloading apparmor
+	started
 	apparmor_restart
 	;;
 try-restart)
+	msg_reloading
+	started
 	apparmor_try_restart
 	;;
 debug)
