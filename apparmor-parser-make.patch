@@ -1,0 +1,17 @@
+--- Makefile.org	2008-06-09 14:59:57.328617929 +0200
++++ Makefile	2008-06-09 15:01:37.766461285 +0200
+@@ -125,9 +125,12 @@
+ techdoc.txt: techdoc/index.html
+ 	w3m -dump $< > $@
+ 
+-all: 	$(TOOLS) $(MANPAGES) ${HTMLMANPAGES} techdoc.pdf techdoc/index.html
++main:	$(TOOLS) $(MANPAGES)
+ 	$(Q)make -C po all
+-	$(Q)make -s tests
++
++docs:	$(MANPAGES) ${HTMLMANPAGES} techdoc.pdf techdoc/index.html
++
++all: 	main docs tests
+ 
+ apparmor_parser: $(OBJECTS) $(PCREOBJECTS) $(AAREOBJECTS)
+ 	rm -f ./libstdc++.a
