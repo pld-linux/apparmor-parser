@@ -17,11 +17,13 @@ Source0:	%{name}-%{_ver}-%{_svnrel}.tar.bz2
 Source1:	%{name}.init
 Patch0:		%{name}-init-args.patch
 Patch1:		%{name}-make.patch
+Patch2:		%{name}-limits.patch
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
 BuildRequires:	libcap-devel
+BuildRequires:	perl-Test-Harness
 BuildRequires:	perl-tools-devel
 BuildRequires:	perl-tools-pod
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -41,6 +43,7 @@ SubDomain.
 %setup -q -n %{name}-%{_ver}
 %patch0 -p2
 %patch1 -p0
+%patch2 -p1
 
 %build
 %{__make} main \
