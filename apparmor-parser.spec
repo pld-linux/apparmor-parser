@@ -1,8 +1,8 @@
 
 %bcond_without	tests
 
-%define		_ver 2.1.2
-%define		_svnrel 1278
+%define		_ver 2.3
+%define		_svnrel 1284
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
@@ -13,18 +13,17 @@ License:	GPL
 Group:		Applications/System
 # Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/AppArmor-%{_ver}/%{name}-%{_ver}-%{_svnrel}.tar.gz
 Source0:	%{name}-%{_ver}-%{_svnrel}.tar.bz2
-# Source0-md5:	29c771617aa690b97f05618317281e64
+# Source0-md5:	5c086cc2505c97fdb30af9ace0b3b6bf
 Source1:	%{name}.init
 Patch0:		%{name}-init-args.patch
+Patch1:		%{name}-make.patch
 URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
-BuildRequires:	latex2html
 BuildRequires:	libcap-devel
 BuildRequires:	perl-tools-devel
 BuildRequires:	perl-tools-pod
-BuildRequires:	tetex-format-pdflatex
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -41,9 +40,10 @@ SubDomain.
 %prep
 %setup -q -n %{name}-%{_ver}
 %patch0 -p2
+%patch1 -p0
 
 %build
-%{__make} \
+%{__make} main \
 	CC="%{__cc}" \
 	CXX="%{__cxx}" \
 	CFLAGS="%{rpmcflags}"
