@@ -2,7 +2,7 @@
 %bcond_without	tests
 
 %define		_ver 2.3
-%define		_svnrel 1284
+%define		_svnrel 1286
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
@@ -13,7 +13,7 @@ License:	GPL
 Group:		Applications/System
 # Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/AppArmor-%{_ver}/%{name}-%{_ver}-%{_svnrel}.tar.gz
 Source0:	%{name}-%{_ver}-%{_svnrel}.tar.bz2
-# Source0-md5:	5c086cc2505c97fdb30af9ace0b3b6bf
+# Source0-md5:	b3e94387d4f6be3932616d79eea03461
 Source1:	%{name}.init
 Patch0:		%{name}-init-args.patch
 Patch1:		%{name}-make.patch
