@@ -15,3 +15,16 @@
  
  apparmor_parser: $(OBJECTS) $(PCREOBJECTS) $(AAREOBJECTS)
  	rm -f ./libstdc++.a
+--- parser_misc.c.org	2008-10-30 12:38:06.708188523 +0100
++++ parser_misc.c	2008-10-30 12:38:35.619310902 +0100
+@@ -31,6 +31,10 @@
+ #include <arpa/inet.h>
+ #include <linux/capability.h>
+ 
++#ifndef AF_ISDN
++#define	AF_ISDN 34
++#endif
++
+ #include "parser.h"
+ #include "parser_yacc.h"
+ 
