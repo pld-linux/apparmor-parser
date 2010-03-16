@@ -1,24 +1,19 @@
 
 %bcond_without	tests
 
-%define		_ver 2.3
-%define		_svnrel 1286
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	%{_ver}.%{_svnrel}
+Version:	2.5
 Release:	1
 Epoch:		1
 License:	GPL
 Group:		Applications/System
-# Source0:	http://forge.novell.com/modules/xfcontent/private.php/apparmor/AppArmor-%{_ver}/%{name}-%{_ver}-%{_svnrel}.tar.gz
-Source0:	%{name}-%{_ver}-%{_svnrel}.tar.bz2
-# Source0-md5:	b3e94387d4f6be3932616d79eea03461
+Source0:	http://kernel.org/pub/linux/security/apparmor/AppArmor-%{version}/AppArmor-%{version}.tgz
+# Source0-md5:	4a747d1a1f85cb272d55b52c7e8a4a02
 Source1:	%{name}.init
-Patch0:		%{name}-init-args.patch
-Patch1:		%{name}-make.patch
-Patch2:		%{name}-limits.patch
-URL:		http://forge.novell.com/modules/xfmod/project/?apparmor
+Patch0:		%{name}-make.patch
+URL:		http://apparmor.wiki.kernel.org/
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
@@ -40,21 +35,21 @@ Linuksa. Ten pakiet jest częścią zestawu narzędzi nazywanych
 SubDomain.
 
 %prep
-%setup -q -n %{name}-%{_ver}
-%patch0 -p2
-%patch1 -p0
-%patch2 -p1
+%setup -q -n AppArmor-%{version}
+cd parser
+%patch0 -p1
 
 %build
-%{__make} main \
+%{__make} -C parser main \
 	CC="%{__cc}" \
 	CXX="%{__cxx}" \
-	CFLAGS="%{rpmcflags}"
+	CFLAGS="%{rpmcflags} %{rpmcppflags}"
 
-%{?with_tests:%{__make} tests}
+%{?with_tests:%{__make} -C parser tests}
 
 %install
 rm -rf $RPM_BUILD_ROOT
+cd parser
 
 install -d $RPM_BUILD_ROOT{%{_sysconfdir}/{apparmor,rc.d/init.d},/sbin,/subdomain,/var/lib/apparmor}
 
@@ -67,6 +62,7 @@ install %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/apparmor
 	DESTDIR=$RPM_BUILD_ROOT \
 	NAME=%{name}
 
+cd ..
 %find_lang %{name}
 
 %clean
@@ -82,7 +78,7 @@ fi
 
 %files -f %{name}.lang
 %defattr(644,root,root,755)
-%doc README
+%doc parser/README
 %attr(755,root,root) /sbin/apparmor_parser
 %dir %{_sysconfdir}/apparmor
 %{_sysconfdir}/apparmor/rc.apparmor.functions

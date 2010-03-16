@@ -1,30 +1,17 @@
---- Makefile.org	2008-06-09 14:59:57.328617929 +0200
-+++ Makefile	2008-06-09 15:01:37.766461285 +0200
+--- parser.org/Makefile	2010-03-11 08:28:38.000000000 +0100
++++ parser/Makefile	2010-03-16 22:42:34.830028680 +0100
 @@ -125,9 +125,12 @@
  techdoc.txt: techdoc/index.html
  	w3m -dump $< > $@
  
--all: 	$(TOOLS) $(MANPAGES) ${HTMLMANPAGES} techdoc.pdf techdoc/index.html
-+main:	$(TOOLS) $(MANPAGES)
+-all: 	$(TOOLS) $(MANPAGES) ${HTMLMANPAGES} techdoc.pdf
++main: 	$(TOOLS)
  	$(Q)make -C po all
 -	$(Q)make -s tests
 +
-+docs:	$(MANPAGES) ${HTMLMANPAGES} techdoc.pdf techdoc/index.html
++docs:	$(MANPAGES) ${HTMLMANPAGES}
 +
-+all: 	main docs tests
++all:	main docs tests
  
  apparmor_parser: $(OBJECTS) $(PCREOBJECTS) $(AAREOBJECTS)
  	rm -f ./libstdc++.a
---- parser_misc.c.org	2008-10-30 12:38:06.708188523 +0100
-+++ parser_misc.c	2008-10-30 12:38:35.619310902 +0100
-@@ -31,6 +31,10 @@
- #include <arpa/inet.h>
- #include <linux/capability.h>
- 
-+#ifndef AF_ISDN
-+#define	AF_ISDN 34
-+#endif
-+
- #include "parser.h"
- #include "parser_yacc.h"
- 
