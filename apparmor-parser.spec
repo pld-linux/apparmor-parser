@@ -40,7 +40,7 @@ cd parser
 %patch0 -p1
 
 %build
-%{__make} -C parser main \
+%{__make} -C parser main manpages \
 	CC="%{__cc}" \
 	CXX="%{__cxx}" \
 	CFLAGS="%{rpmcflags} %{rpmcppflags}"
@@ -51,12 +51,15 @@ cd parser
 rm -rf $RPM_BUILD_ROOT
 cd parser
 
-install -d $RPM_BUILD_ROOT{%{_sysconfdir}/{apparmor,rc.d/init.d},/sbin,/subdomain,/var/lib/apparmor}
+install -d $RPM_BUILD_ROOT{%{_mandir}/man{5,7,8},%{_sysconfdir}/{apparmor,rc.d/init.d},/sbin,/subdomain,/var/lib/apparmor}
 
 install apparmor_parser $RPM_BUILD_ROOT/sbin
 install subdomain.conf $RPM_BUILD_ROOT%{_sysconfdir}/apparmor
 install rc.apparmor.functions $RPM_BUILD_ROOT%{_sysconfdir}/apparmor
 install %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/apparmor
+install *.5 $RPM_BUILD_ROOT%{_mandir}/man5
+install *.7 $RPM_BUILD_ROOT%{_mandir}/man7
+install *.8 $RPM_BUILD_ROOT%{_mandir}/man8
 
 %{__make} -C po install \
 	DESTDIR=$RPM_BUILD_ROOT \
@@ -87,3 +90,4 @@ fi
 #%attr(754,root,root) /etc/rc.d/init.d/aaeventd
 /subdomain
 /var/lib/apparmor
+%{_mandir}/man[578]/*.[578]*
