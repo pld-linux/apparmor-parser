@@ -5,7 +5,7 @@ Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	2.5
-Release:	2
+Release:	3
 Epoch:		1
 License:	GPL
 Group:		Applications/System
@@ -13,6 +13,7 @@ Source0:	http://kernel.org/pub/linux/security/apparmor/AppArmor-%{version}/AppAr
 # Source0-md5:	4a747d1a1f85cb272d55b52c7e8a4a02
 Source1:	%{name}.init
 Patch0:		%{name}-make.patch
+Patch1:		%{name}-rc.patch
 URL:		http://apparmor.wiki.kernel.org/
 BuildRequires:	bison
 BuildRequires:	flex
@@ -38,6 +39,7 @@ SubDomain.
 %setup -q -n AppArmor-%{version}
 cd parser
 %patch0 -p1
+%patch1 -p0
 
 %build
 %{__make} -C parser main manpages \
