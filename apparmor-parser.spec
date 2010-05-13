@@ -19,6 +19,7 @@ BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
 BuildRequires:	libcap-devel
+BuildRequires:	libstdc++-devel
 BuildRequires:	perl-Test-Harness
 BuildRequires:	perl-tools-devel
 BuildRequires:	perl-tools-pod
