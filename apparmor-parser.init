@@ -43,6 +43,10 @@ aa_log_action_begin() {
 	:
 }
 
+aa_log_action_start() {
+	:
+}
+
 aa_log_action_end() {
 	:
 }

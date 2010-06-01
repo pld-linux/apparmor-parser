@@ -1,0 +1,1056 @@
+=== modified file 'libraries/libapparmor/swig/perl/Makefile.am'
+--- libraries/libapparmor/swig/perl/Makefile.am	2009-05-12 21:56:56 +0000
++++ libraries/libapparmor/swig/perl/Makefile.am	2010-03-16 22:00:26 +0000
+@@ -1,7 +1,8 @@
+ EXTRA_DIST =Makefile.PL libapparmor_wrap.c LibAppArmor.pm examples/*.pl
++
++if HAVE_PERL
+ noinst_DATA =LibAppArmor.so
+ 
+-if HAVE_PERL
+ libapparmor_wrap.c: $(srcdir)/../SWIG/libapparmor.i
+ 	$(SWIG) -perl -I$(srcdir)/../../src -module LibAppArmor -o $@ $(srcdir)/../SWIG/libapparmor.i
+ 
+@@ -27,4 +28,4 @@
+ #rm -f Makefile.perl Makefile.perl.old
+ 	rm -f *.so # *.o
+ 
+-endif
+\ No newline at end of file
++endif
+
+=== modified file 'parser/Makefile'
+--- parser/Makefile	2009-11-11 18:58:57 +0000
++++ parser/Makefile	2010-03-16 22:18:55 +0000
+@@ -125,9 +125,20 @@
+ techdoc.txt: techdoc/index.html
+ 	w3m -dump $< > $@
+ 
+-all: 	$(TOOLS) $(MANPAGES) ${HTMLMANPAGES} techdoc.pdf
++# targets arranged this way so that people who don't want full docs can
++# pick specific targets they want.
++main: 	$(TOOLS)
+ 	$(Q)make -C po all
+-	$(Q)make -s tests
++
++manpages:	$(MANPAGES)
++
++htmlmanpages:	$(HTMLMANPAGES)
++
++pdf:	techdoc.pdf
++
++docs:	manpages htmlmanpages pdf
++
++all:	main docs tests
+ 
+ apparmor_parser: $(OBJECTS) $(PCREOBJECTS) $(AAREOBJECTS)
+ 	rm -f ./libstdc++.a
+@@ -191,7 +202,7 @@
+ af_names.h: /usr/include/bits/socket.h
+ 	LC_ALL=C sed -n -e '/$(__FILTER)/d' -e "s/^\#define[ \\t]\\+PF_\\([A-Z0-9_]\\+\\)[ \\t]\\+\\([0-9]\\+\\)\\(.*\\)\$$/#ifndef AF_\\1\\n#  define AF_\\1 \\2\\n#endif\\nAA_GEN_NET_ENT(\"\\L\\1\", \\UAF_\\1)\\n/p" $< > $@
+ 	LC_ALL=C sed -n -e "s/^\#define[ \\t]\\+PF_MAX[ \\t]\\+\\([0-9]\\+\\)[ \\t]\\+.*/#define AA_AF_MAX \\1\n/p" $< >> $@
+-	cat $@
++	# cat $@
+ 
+ cap_names.h: /usr/include/linux/capability.h
+ 	LC_ALL=C sed -n -e "/CAP_EMPTY_SET/d" -e "s/^\#define[ \\t]\\+CAP_\\([A-Z0-9_]\\+\\)[ \\t]\\+\\([0-9xa-f]\\+\\)\\(.*\\)\$$/\{\"\\L\\1\", \\UCAP_\\1\},/p" $< > $@
+@@ -214,7 +225,7 @@
+ 
+ .SILENT: tests
+ tests: ${TESTS}
+-	for test in ${TESTS} ; do echo "*** running $${test}" && ./$${test} $(BUILD_OUTPUT) ; done
++	sh -e -c 'for test in ${TESTS} ; do echo "*** running $${test}" && ./$${test} $(BUILD_OUTPUT) ; done'
+ 	$(Q)make -s -C tst tests
+ 
+ .SILENT: check
+
+=== modified file 'parser/apparmor_parser.pod'
+--- parser/apparmor_parser.pod	2010-01-07 18:03:49 +0000
++++ parser/apparmor_parser.pod	2010-04-03 23:24:06 +0000
+@@ -154,6 +154,33 @@
+ Given once, only checks the profiles to ensure syntactic correctness.
+ Given twice, dumps its interpretation of the profile for checking.
+ 
++=item -D n, --dump=n
++
++Debug flag for dumping various structures and passes of policy compilation.
++A single dump flag can be specified per --dump option, but the dump flag
++can be passed multiple times.  Note progress flags tend to also imply
++the matching stats flag.
++
++  apparmor_parser --dump=dfa-stats --dump=trans-stats <file>
++
++Use --help=dump to see a full list of which dump flags are supported
++
++=item -O n, --optimize=n
++
++Set the optimization flags used by policy compilation.  A sinlge optimization
++flag can be toggled per -O option, but the optimize flag can be passed
++multiple times.  Turning off some phases of the optimization can make
++it so that policy can't complete compilation due to size constraints
++(it is entirely possible to create a dfa with millions of states that will
++take days or longer to compile).
++
++Note: The parser is set to use a balanced default set of flags, that
++will result in resonable compression but not take excessive amounts
++of time to complete.
++
++Use --help=optimize to see a full list of which optimization flags are
++supported.
++
+ =item -h, --help
+ 
+ Give a quick reference guide.
+
+=== modified file 'parser/libapparmor_re/regexp.y'
+--- parser/libapparmor_re/regexp.y	2010-02-01 07:21:00 +0000
++++ parser/libapparmor_re/regexp.y	2010-03-13 10:23:23 +0000
+@@ -1715,7 +1715,9 @@
+ 			Trans::iterator j = trans.find(*i);
+ 			if (j != trans.end())
+ 				trans.erase(j);
++			State *s = *i;
+ 			states.erase(*i);
++			delete(s);
+ 		}
+ 	}
+ 
+
+=== modified file 'parser/parser.h'
+--- parser/parser.h	2010-02-17 20:21:52 +0000
++++ parser/parser.h	2010-03-12 23:26:32 +0000
+@@ -4,6 +4,9 @@
+  *   Copyright (c) 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007
+  *   NOVELL (All rights reserved)
+  *
++ *   Copyright (c) 2010
++ *   Canonical, Ltd. (All rights reserved)
++ *
+  *   This program is free software; you can redistribute it and/or
+  *   modify it under the terms of version 2 of the GNU General Public
+  *   License published by the Free Software Foundation.
+@@ -14,7 +17,8 @@
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+- *   along with this program; if not, contact Novell, Inc.
++ *   along with this program; if not, contact Novell, Inc. or Canonical
++ *   Ltd.
+  */
+ 
+ #include <netinet/in.h>
+@@ -280,12 +284,16 @@
+ extern void free_cod_entries(struct cod_entry *list);
+ 
+ /* parser_symtab.c */
++struct set_value {;
++	char *val;
++	struct set_value *next;
++};
+ extern int add_boolean_var(const char *var, int boolean);
+ extern int get_boolean_var(const char *var);
+ extern int new_set_var(const char *var, const char *value);
+ extern int add_set_value(const char *var, const char *value);
+-extern void *get_set_var(const char *var);
+-extern char *get_next_set_value(void **context);
++extern struct set_value *get_set_var(const char *var);
++extern char *get_next_set_value(struct set_value **context);
+ extern void dump_symtab(void);
+ extern void dump_expanded_symtab(void);
+ void free_symtabs(void);
+@@ -312,7 +320,7 @@
+ extern void add_hat_to_policy(struct codomain *policy, struct codomain *hat);
+ extern void add_entry_to_policy(struct codomain *policy, struct cod_entry *entry);
+ extern void post_process_nt_entries(struct codomain *cod);
+-extern int post_process_policy(void);
++extern int post_process_policy(int debug_only);
+ extern int process_hat_regex(struct codomain *cod);
+ extern int process_hat_variables(struct codomain *cod);
+ extern int post_merge_rules(void);
+
+=== modified file 'parser/parser_lex.l'
+--- parser/parser_lex.l	2010-03-09 05:49:16 +0000
++++ parser/parser_lex.l	2010-03-12 09:50:26 +0000
+@@ -227,6 +227,7 @@
+ }
+ 
+ <<EOF>> {
++	fclose(yyin);
+ 	yypop_buffer_state();
+ 	if ( !YY_CURRENT_BUFFER ) yyterminate();
+ }
+
+=== modified file 'parser/parser_main.c'
+--- parser/parser_main.c	2010-01-28 01:20:13 +0000
++++ parser/parser_main.c	2010-04-03 22:41:40 +0000
+@@ -4,6 +4,9 @@
+  *   Copyright (c) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+  *   NOVELL (All rights reserved)
+  *
++ *   Copyright (c) 2010
++ *   Canonical, Ltd. (All rights reserved)
++ *
+  *   This program is free software; you can redistribute it and/or
+  *   modify it under the terms of version 2 of the GNU General Public
+  *   License published by the Free Software Foundation.
+@@ -14,7 +17,8 @@
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+- *   along with this program; if not, contact Novell, Inc.
++ *   along with this program; if not, contact Novell, Inc. or Canonical,
++ *   Ltd.
+  */
+ 
+ #include <stdio.h>
+@@ -258,7 +262,7 @@
+ 			break;
+ 		case 'd':
+ 			debug++;
+-			skip_cache = 1;
++			skip_read_cache = 1;
+ 			break;
+ 		case 'h':
+ 			if (!optarg) {
+@@ -316,7 +320,7 @@
+ 			subdomainbase = strndup(optarg, PATH_MAX);
+ 			break;
+ 		case 'D':
+-			skip_cache = 1;
++			skip_read_cache = 1;
+ 			if (!optarg) {
+ 				dump_vars = 1;
+ 			} else if (strcmp(optarg, "variables") == 0) {
+@@ -359,7 +363,7 @@
+ 			}
+ 			break;
+ 		case 'O':
+-			skip_cache = 1;
++			skip_read_cache = 1;
+ 			if (strcmp(optarg, "0") == 0) {
+ 				dfaflags |= DFA_CONTROL_NO_TREE_NORMAL |
+ 					DFA_CONTROL_NO_TREE_SIMPLE |
+@@ -812,7 +816,7 @@
+ 		goto out;
+ 	}
+ 
+-	retval = post_process_policy();
++	retval = post_process_policy(debug);
+   	if (retval != 0) {
+   		PERROR(_("%s: Errors found in file. Aborting.\n"), progname);
+ 		goto out;
+
+=== modified file 'parser/parser_policy.c'
+--- parser/parser_policy.c	2009-08-20 15:27:12 +0000
++++ parser/parser_policy.c	2010-03-12 23:26:32 +0000
+@@ -4,6 +4,9 @@
+  *   Copyright (c) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+  *   NOVELL (All rights reserved)
+  *
++ *   Copyright (c) 2010
++ *   Canonical, Ltd. (All rights reserved)
++ *
+  *   This program is free software; you can redistribute it and/or
+  *   modify it under the terms of version 2 of the GNU General Public
+  *   License published by the Free Software Foundation.
+@@ -14,7 +17,8 @@
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+- *   along with this program; if not, contact Novell, Inc.
++ *   along with this program; if not, contact Novell, Inc. or Canonical,
++ *   Ltd.
+  */
+ 
+ #include <stdio.h>
+@@ -664,7 +668,7 @@
+ 	return ret;
+ }
+ 
+-int post_process_policy(void)
++int post_process_policy(int debug_only)
+ {
+ 	int retval = 0;
+ 
+@@ -696,11 +700,13 @@
+ 		return retval;
+ 	}
+ 
+-	retval = post_process_regex();
+-	if (retval != 0) {
+-		PERROR(_("%s: Errors found during regex postprocess.  Aborting.\n"),
+-		       progname);
+-		return retval;
++	if (!debug_only) {
++		retval = post_process_regex();
++		if (retval != 0) {
++			PERROR(_("%s: Errors found during regex postprocess.  Aborting.\n"),
++			       progname);
++			return retval;
++		}
+ 	}
+ 
+ 	return retval;
+
+=== modified file 'parser/parser_symtab.c'
+--- parser/parser_symtab.c	2009-07-24 13:24:53 +0000
++++ parser/parser_symtab.c	2010-03-12 22:41:58 +0000
+@@ -33,11 +33,6 @@
+ 	sd_set,
+ };
+ 
+-struct set_value {
+-	char *val;
+-	struct set_value *next;
+-};
+-
+ struct symtab {
+ 	char *var_name;
+ 	enum var_type type;
+@@ -288,7 +283,7 @@
+ 
+ /* returns a pointer to the value list, which should be used as the
+  * argument to the get_next_set_value() function. */
+-void *get_set_var(const char *var)
++struct set_value *get_set_var(const char *var)
+ {
+ 	struct symtab *result;
+ 	struct set_value *valuelist = NULL;
+@@ -321,16 +316,17 @@
+ }
+ 
+ /* iterator to walk the list of set values */
+-char *get_next_set_value(void **list)
++char *get_next_set_value(struct set_value **list)
+ {
+-	struct set_value **valuelist = (struct set_value **) list;
++	struct set_value *next;
+ 	char *ret;
+ 
+-	if (!valuelist || !(*valuelist))
++	if (!list || !(*list))
+ 		return NULL;
+ 
+-	ret = (*valuelist)->val;
+-	(*valuelist) = (*valuelist)->next;
++	ret = (*list)->val;
++	next = (*list)->next;
++	(*list) = next;
+ 
+ 	return ret;
+ }
+@@ -569,7 +565,7 @@
+ {
+ 	int rc = 0;
+ 	int retval;
+-	void *retptr;
++	struct set_value *retptr;
+ 	struct symtab *a, *b;
+ 
+ 	a = new_symtab_entry("blah");
+
+=== modified file 'parser/parser_variable.c'
+--- parser/parser_variable.c	2009-07-24 23:47:46 +0000
++++ parser/parser_variable.c	2010-03-12 23:20:22 +0000
+@@ -124,7 +124,7 @@
+ 
+ static int expand_entry_variables(struct cod_entry *entry)
+ {
+-	void *valuelist;
++	struct set_value *valuelist;
+ 	int ret = TRUE;
+ 	char *value;
+ 	struct var_string *split_var;
+
+=== added file 'profiles/apparmor.d/abstractions/dbus-session'
+--- profiles/apparmor.d/abstractions/dbus-session	1970-01-01 00:00:00 +0000
++++ profiles/apparmor.d/abstractions/dbus-session	2010-04-19 17:38:17 +0000
+@@ -0,0 +1,14 @@
++# vim:syntax=apparmor
++# $Id$
++# ------------------------------------------------------------------
++#
++#    Copyright (C) 2010 Canonical Ltd.
++#
++#    This program is free software; you can redistribute it and/or
++#    modify it under the terms of version 2 of the GNU General Public
++#    License published by the Free Software Foundation.
++#
++# ------------------------------------------------------------------
++
++  #include <abstractions/dbus>
++  /usr/bin/dbus-launch Uxr,
+
+=== modified file 'profiles/apparmor.d/abstractions/php5'
+--- profiles/apparmor.d/abstractions/php5	2010-01-03 21:16:38 +0000
++++ profiles/apparmor.d/abstractions/php5	2010-03-30 17:34:32 +0000
+@@ -2,7 +2,7 @@
+ # ------------------------------------------------------------------
+ #
+ #    Copyright (C) 2002-2006 Novell/SUSE
+-#    Copyright (C) 2009 Canonical, Ltd.
++#    Copyright (C) 2009-2010 Canonical Ltd.
+ #
+ #    This program is free software; you can redistribute it and/or
+ #    modify it under the terms of version 2 of the GNU General Public
+@@ -11,13 +11,13 @@
+ # ------------------------------------------------------------------
+ 
+   # shared snippets for config files
+-  /etc/php5/{conf.d,apache2,cli,fastcgi}/ r,
+-  /etc/php5/{conf.d,apache2,cli,fastcgi}/*.ini r,
++  /etc/php5/{conf.d,apache2,cli,fastcgi,cgi}/ r,
++  /etc/php5/{conf.d,apache2,cli,fastcgi,cgi}/*.ini r,
+ 
+   # Xlibs
+   /usr/X11R6/lib{,32,64}/lib*.so* mr,
+   # php extensions
+-  /usr/lib{64,}/php5/{libexec,extensions}/*.so mr,
++  /usr/lib{64,}/php5/*/*.so mr,
+ 
+   # php5 session mmap socket
+   /var/lib/php5/session_mm_* rwlk,
+
+=== modified file 'profiles/apparmor.d/abstractions/samba'
+--- profiles/apparmor.d/abstractions/samba	2009-11-04 20:25:42 +0000
++++ profiles/apparmor.d/abstractions/samba	2010-03-25 23:13:00 +0000
+@@ -2,7 +2,7 @@
+ # $Id$
+ # ------------------------------------------------------------------
+ #
+-#    Copyright (C) 2009 Canonical Ltd.
++#    Copyright (C) 2009-2010 Canonical Ltd.
+ #
+ #    This program is free software; you can redistribute it and/or
+ #    modify it under the terms of version 2 of the GNU General Public
+@@ -12,7 +12,7 @@
+ 
+   /etc/samba/smb.conf r,
+   /usr/share/samba/*.dat r,
+-  /var/lib/samba/**.tdb rw,
++  /var/lib/samba/**.tdb rwk,
+   /var/log/samba/cores/* w,
+   /var/log/samba/log.* w,
+   /var/run/samba/*.tdb rw,
+
+=== modified file 'profiles/apparmor.d/abstractions/user-tmp'
+--- profiles/apparmor.d/abstractions/user-tmp	2009-11-04 20:25:42 +0000
++++ profiles/apparmor.d/abstractions/user-tmp	2010-05-12 08:52:23 +0000
+@@ -2,7 +2,7 @@
+ # ------------------------------------------------------------------
+ #
+ #    Copyright (C) 2002-2009 Novell/SUSE
+-#    Copyright (C) 2009 Canonical Ltd.
++#    Copyright (C) 2009-2010 Canonical Ltd.
+ #
+ #    This program is free software; you can redistribute it and/or
+ #    modify it under the terms of version 2 of the GNU General Public
+@@ -11,11 +11,11 @@
+ # ------------------------------------------------------------------
+ 
+   # per-user tmp directories
+-  @{HOME}/tmp/**  rwkl,
+-  @{HOME}/tmp/    rw,
++  owner @{HOME}/tmp/**  rwkl,
++  owner @{HOME}/tmp/    rw,
+ 
+   # global tmp directories
+-  /var/tmp/**     rwkl,
+-  /var/tmp/       rw,
+-  /tmp/**         rwkl,
+-  /tmp/           rw,
++  owner /var/tmp/**     rwkl,
++  owner /var/tmp/       rw,
++  owner /tmp/**         rwkl,
++  owner /tmp/           rw,
+
+=== modified file 'tests/regression/subdomain/prologue.inc'
+--- tests/regression/subdomain/prologue.inc	2010-02-07 07:04:57 +0000
++++ tests/regression/subdomain/prologue.inc	2010-04-27 09:37:30 +0000
+@@ -93,8 +93,10 @@
+ 
+ 	while [ -h ${link} ]
+ 	do
+-		if [ -x /usr/bin/readlink ] ; then 
+-			target=$(/usr/bin/readlink ${link})
++		if [ -x /usr/bin/readlink ] ; then
++			target=$(/usr/bin/readlink -f ${link})
++		elif [ -x /bin/readlink ] ; then
++			target=$(/bin/readlink -f ${link})
+ 		else 
+ 			# I'm sure there's a more perlish way to do this
+ 			target=$( perl -e "printf (\"%s\n\", readlink(\"${link}\"));") 
+
+=== modified file 'tests/stress/parser/stress.rb'
+--- tests/stress/parser/stress.rb	2008-11-26 22:16:48 +0000
++++ tests/stress/parser/stress.rb	2010-03-15 18:31:38 +0000
+@@ -14,10 +14,27 @@
+   return sprintf("%0#{len}x", rand(2 ** (4 * len)))
+ end
+ 
++def get_random_regex()
++  case rand(10)
++    when 0..3
++      return "{#{get_random_name(rand(8) + 2)},#{get_random_name(rand(8) + 2)},#{get_random_name(rand(8) + 2)}}"
++    when 4..5
++      return "[#{get_random_name(rand(5) + 1)}]"
++    when 6..7
++      return "*"
++    when 8..9
++      return "**"
++  end
++end
++
+ def get_random_path()
+   out = ""
+-  0.upto(rand(20)) do
+-    out = "#{out}/#{get_random_name(4)}"
++  0.upto(rand(20) + 2) do
++    if rand(4) == 0
++      out = "#{out}/#{get_random_regex}"
++    else
++      out = "#{out}/#{get_random_name(rand(10) + 4)}"
++    end
+   end
+   return out
+ end
+@@ -83,7 +100,10 @@
+     "mknod",
+     "lease",
+     "audit_write",
+-    "audit_control"
++    "audit_control",
++    "setfcap",
++    "mac_override",
++    "mac_admin"
+   ]
+ 
+   def initialize()
+@@ -95,6 +115,93 @@
+   end
+ end
+ 
++class NetRule < Rule
++  # XXX Fill me in
++end
++
++class RlimitRule < Rule
++  RLIMIT_LIST = [
++#"cpu",		# cpu rlimit not supported
++    "fsize",
++    "data",
++    "stack",
++    "core",
++    "rss",
++    "nofile",
++    "ofile",
++    "as",
++    "nproc",
++    "memlock",
++    "locks",
++    "sigpending",
++    "msgqueue",
++    "nice",
++    "rtprio"
++  ]
++
++  def initialize()
++    @rlimit = RLIMIT_LIST[rand(RLIMIT_LIST.length)]
++    if rand(20) == 0
++      @limit = "infinity"
++    elsif @rlimit == "nice"
++      @limit = rand(40) - 20
++    else
++      @limit = rand(2 ** 31)
++    end
++  end
++
++  def to_s
++    return "  set rlimit #{@rlimit} <= #{@limit},"
++  end
++end
++
++class Flags
++  FLAG_LIST = [
++    "complain",
++    "audit",
++    "chroot_relative",
++    "namespace_relative",
++    "mediate_deleted",
++    "delegate_deleted",
++    "attach_disconnected",
++    "no_attach_disconnected",
++    "chroot_attach",
++    "chroot_no_attach"
++  ]
++
++  FLAG_CONFLICTS = [
++    ["chroot_relative", "namespace_relative"],
++    ["mediate_deleted", "delegate_deleted"],
++    ["attach_disconnected", "no_attach_disconnected"],
++    ["chroot_attach", "chroot_no_attach"]
++  ]
++
++  def initialize()
++    @flags = []
++    if rand(2) == 1
++      return
++    end
++
++    0.upto(4 - Math.log(rand(32) + 1).to_int) do |x|
++      @flags << FLAG_LIST[rand(FLAG_LIST.length)]
++    end
++
++    FLAG_CONFLICTS.each do |c|
++      if @flags.include?(c[0]) and @flags.include?(c[1])
++        @flags.delete(c[rand(2)])
++      end
++    end
++  end
++
++  def to_s
++    if @flags.empty?
++      return ""
++    end
++    out = @flags.join(",")
++    return "flags=(#{out})"
++  end
++end
++
+ def prefix_to_s(name)
+   out = []
+   out << "#"
+@@ -112,16 +219,19 @@
+     @rvalue = get_random_name()
+     @name = "/does/not/exist/#{@rvalue}"
+     @rules = []
++    @flags = Flags.new()
+   end
+ 
+   def generate_rules
+-    @rules << FileRule.new(@name, "rm")
++    @rules << FileRule.new(@name, "rm").to_s
+     0.upto(rand($max_rules - $min_rules) + $min_rules) do |x|
+       case rand(100)
+-        when 0..19
+-          @rules << CapRule.new
+-        when 19..100
+-          @rules << FileRule.new
++        when 0..14
++          @rules << CapRule.new.to_s
++        when 15..24
++          @rules << RlimitRule.new.to_s
++        when 25..100
++          @rules << FileRule.new.to_s
+       end
+     end
+   end
+@@ -132,10 +242,10 @@
+     out << "# profile for #{@name}"
+     out << "# generated by #{__FILE__} #{$my_version}"
+     out << "#"
+-    out << "#{@name} {"
++    out << "#{@name} #{@flags} {"
+     out << "  #include <abstractions/base>"
+     out << ""
+-    @rules.each { |r| out << r.to_s }
++    @rules.sort.each { |r| out << "  #{r}" }
+     out << "}"
+     out << ""
+   end
+
+=== modified file 'utils/SubDomain.pm'
+--- utils/SubDomain.pm	2010-03-10 23:30:06 +0000
++++ utils/SubDomain.pm	2010-03-26 13:51:21 +0000
+@@ -6612,10 +6612,14 @@
+     LibAppArmor::free_record($event);
+ 
+     #map new c and d to w as logprof doesn't support them yet
+-    $rmask =~ s/c/w/g;
+-    $rmask =~ s/d/w/g;
+-    $dmask =~ s/c/w/g;
+-    $dmask =~ s/d/w/g;
++    if ($rmask) {
++        $rmask =~ s/c/w/g;
++        $rmask =~ s/d/w/g;
++    }
++    if ($dmask) {
++        $dmask =~ s/c/w/g;
++        $dmask =~ s/d/w/g;
++    }
+ 
+     if ($rmask && !validate_log_mode(hide_log_mode($rmask))) {
+         fatal_error(sprintf(gettext('Log contains unknown mode %s.'),
+
+=== modified file 'utils/apparmor_notify'
+--- utils/apparmor_notify	2010-03-10 16:11:26 +0000
++++ utils/apparmor_notify	2010-05-27 14:08:12 +0000
+@@ -30,8 +30,7 @@
+ require Time::Local;
+ require File::Basename;
+ 
+-use vars qw($opt_p $opt_s $opt_l $opt_h $opt_v $opt_d $opt_w);
+-use Getopt::Std;
++use Getopt::Long;
+ 
+ my %prefs;
+ my $conf = "/etc/apparmor/notify.conf";
+@@ -67,7 +66,6 @@
+ $ENV{SHELL} = "/bin/sh";
+ defined($ENV{IFS}) and $ENV{IFS} = ' \t\n';
+ 
+-print $0 . "\n";
+ my $prog = File::Basename::basename($0);
+ 
+ if ($prog !~ /^[a-zA-Z0-9_\-]+$/) {
+@@ -75,32 +73,66 @@
+     exitscript(1);
+ }
+ 
+-my $logfile = "/var/log/kern.log";
+--e "/var/run/auditd.pid" and $logfile = "/var/log/audit/audit.log";
+-
+ $> == $< or die "Cannot be suid\n";
+ $) == $( or die "Cannot be sgid\n";
+ 
+ my $login;
++our $orig_euid = $>;
+ 
+-getopts('dhlpvs:w:');
++my $opt_d = '';
++my $opt_h = '';
++my $opt_l = '';
++my $opt_p = '';
++my $opt_v = '';
++my $opt_f = '';
++my $opt_s = 0;
++my $opt_u = '';
++my $opt_w = 0;
++GetOptions(
++    'debug|d'        => \$opt_d,
++    'help|h'         => \$opt_h,
++    'since-last|l'   => \$opt_l,
++    'poll|p'         => \$opt_p,
++    'verbose|v'      => \$opt_v,
++    'file|f=s'       => \$opt_f,
++    'since-days|s=n' => \$opt_s,
++    'user|u=s'       => \$opt_u,
++    'wait|w=n'       => \$opt_w,
++);
+ if ($opt_h) {
+     usage;
+     exitscript(0);
+ }
+ 
++# monitor file specified with -f, else use audit.log if auditd is running,
++# otherwise kern.log
++our $logfile = "/var/log/kern.log";
++if ($opt_f) {
++    -f $opt_f or die "'$opt_f' does not exist. Aborting\n";
++    $logfile = $opt_f;
++} else {
++    -e "/var/run/auditd.pid" and $logfile = "/var/log/audit/audit.log";
++}
++
++-r $logfile or die "Cannot read '$logfile'\n";
++our $logfile_inode = get_logfile_inode($logfile);
++our $logfile_size = get_logfile_size($logfile);
+ open (LOGFILE, "<$logfile") or die "Could not open '$logfile'\n";
+ # Drop priviliges, if running as root
+ if ($< == 0) {
+     $login = "root";
+     if (defined($ENV{SUDO_UID}) and defined($ENV{SUDO_GID})) {
+         POSIX::setgid($ENV{SUDO_GID}) or _error("Could not change gid");
+-        POSIX::setuid($ENV{SUDO_UID}) or _error("Could not change uid");
++        $> = $ENV{SUDO_UID} or _error("Could not change euid");
+         defined($ENV{SUDO_USER}) and $login = $ENV{SUDO_USER};
+     } else {
++        my $drop_to = $nobody_user;
++        if ($opt_u) {
++            $drop_to = $opt_u;
++        }
+         # nobody/nogroup
+-        POSIX::setgid(scalar(getpwnam($nobody_group))) or _error("Could not change gid to '$nobody_group'");
+-        POSIX::setuid(scalar(getpwnam($nobody_user))) or _error("Could not change uid to '$nobody_user'");
++        POSIX::setgid(scalar(getgrnam($nobody_group))) or _error("Could not change gid to '$nobody_group'");
++        $> = scalar(getpwnam($drop_to)) or _error("Could not change euid to '$drop_to'");
+     }
+ } else {
+     $login = getlogin();
+@@ -111,7 +143,7 @@
+     readconf($conf);
+     if (defined($prefs{use_group})) {
+         my ($name, $passwd, $gid, $members) = getgrnam($prefs{use_group});
+-        if (not defined($members) or not defined($login) or not grep { $_ eq $login } split(/ /, $members)) {
++        if (not defined($members) or not defined($login) or (not grep { $_ eq $login } split(/ /, $members) and $login ne "root")) {
+             _error("'$login' must be in '$prefs{use_group}' group. Aborting");
+         }
+     }
+@@ -220,7 +252,6 @@
+     defined($name) and $formatted .= "Name: $name\n";
+     defined($denied) and $formatted .= "Denied: $denied\n";
+     defined($family) and defined ($sock_type) and $formatted .= "Family: $family\nSocket type: $sock_type\n";
+-    #defined($date) and $since > 0 and $formatted .= "Date: ". scalar(localtime($date)) ."\n";
+     $formatted .= "Logfile: $logfile\n";
+ 
+     return $formatted;
+@@ -259,6 +290,26 @@
+     close(PS);
+ }
+ 
++sub send_message {
++    my $msg = $_[0];
++
++    my $pid = fork();
++    if ($pid == 0) { 	# child
++        # notify-send needs $< to be the unprivileged user
++        $< = $>;
++
++        # 'system' uses execvp() so no shell metacharacters here.
++        # $notify_exe is an absolute path so execvp won't search PATH.
++        system "$notify_exe", "-i", "gtk-dialog-warning", "-u", "critical", "--", "AppArmor Message", "$msg";
++        my $exit_code = $? >> 8;
++        exit($exit_code);
++    }
++
++    # parent
++    waitpid($pid, 0);
++    return $?;
++}
++
+ sub do_notify {
+     my %seen;
+     my $seconds = 5;
+@@ -273,7 +324,7 @@
+         umask 0;
+         open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
+         open STDOUT, '>/dev/null' or die "Can't write to /dev/null: $!";
+-        open STDERR, '>/dev/null' or die "Can't write to /dev/null: $!";
++        #open STDERR, '>/dev/null' or die "Can't write to /dev/null: $!";
+         my $pid = fork();
+         exit if $pid;
+         die "Couldn't fork: $!" unless defined($pid);
+@@ -293,12 +344,24 @@
+     my $count = 0;
+     my $footer = "For more information, please see:\n$url";
+     my $first_run = 1;
+-    my $since = $now - (int($opt_s) * 60 * 60 * 24);
++    my $since = $now;
++    if ($opt_s and int($opt_s) > 0) {
++       $since = $since - (int($opt_s) * 60 * 60 * 24);
++    }
+     for (my $i=0; $time_to_die == 0; $i++) {
++        if ($logfile_inode != get_logfile_inode($logfile)) {
++            _warn("$logfile changed inodes, reopening");
++            reopen_logfile();
++        } elsif (get_logfile_size($logfile) < $logfile_size) {
++            _warn("$logfile is smaller, reopening");
++            reopen_logfile();
++        }
+         while(my $msg = <LOGFILE>) {
+             my @attrib;
+-            if ($first_run == 1 and $opt_s) {
+-                @attrib = parse_message($msg, $since);
++            if ($first_run == 1) {
++                if ($since != $now) {
++                    @attrib = parse_message($msg, $since);
++                }
+             } else {
+                 @attrib = parse_message($msg);
+             }
+@@ -340,12 +403,9 @@
+ 
+             $m .= $footer;
+ 
+-	    # 'system' uses execvp() so no shell metacharacters here.
+-            # $notify_exe is an absolute path so execvp won't search PATH.
+-            system "$notify_exe", "-i", "gtk-dialog-warning", "-u", "critical", "--", "AppArmor Message", "$m";
+-            my $exit_code = $? >> 8;
+-            if ($exit_code != 0) {
+-                _warn("'$notify_exe' exited with '$exit_code'");
++            my $rc = send_message($m);
++            if ($rc != 0) {
++                _warn("'$notify_exe' exited with error '$rc'");
+                 $time_to_die = 1;
+                 last;
+             }
+@@ -356,7 +416,7 @@
+ 
+         if ($first_run) {
+             if ($count > 0) {
+-                my $m = "$logfile contains $count existing denied message";
++                my $m = "$logfile contains $count denied message";
+                 $count > 1 and $m .= "s";
+                 if ($opt_s) {
+                     $m .= " in the last ";
+@@ -368,7 +428,7 @@
+                 }
+                 $m .= ". ";
+                 $m .= $footer;
+-                system "$notify_exe", "-i", "gtk-dialog-warning", "-u", "critical", "--", "AppArmor Message", "$m";
++                send_message($m);
+             }
+             $first_run = 0;
+         }
+@@ -390,6 +450,9 @@
+ }
+ 
+ sub show_since {
++    my %msg_hash;
++    my %last_date;
++    my @msg_list;
+     my $count = 0;
+     while(my $msg = <LOGFILE>) {
+         my @attrib = parse_message($msg, $_[0]);
+@@ -397,10 +460,31 @@
+ 
+         my $m = format_message(@attrib);
+         $m ne "" or next;
+-
+-        $opt_v and print "$m\n";
++        my $date = $attrib[6];
++        if ($opt_v) {
++            if (exists($msg_hash{$m})) {
++                $msg_hash{$m}++;
++                defined($date) and $last_date{$m} = scalar(localtime($date));
++            } else {
++                $msg_hash{$m} = 1;
++                push(@msg_list, $m);
++            }
++        }
+         $count++;
+     }
++    if ($opt_v) {
++        foreach my $m (@msg_list) {
++            print "$m";
++            if ($msg_hash{$m} gt 1) {
++                print "($msg_hash{$m} found";
++                if (exists($last_date{$m})) {
++                    print ", most recent from '$last_date{$m}'";
++                }
++                print ")\n";
++            }
++            print "\n";
++        }
++    }
+     return $count;
+ }
+ 
+@@ -452,19 +536,63 @@
+ sub usage {
+     my $s = <<'EOF';
+ USAGE: apparmor_notify [OPTIONS]
++
+ Display AppArmor notifications or messages for DENIED entries.
+ 
+ OPTIONS:
+-  -p		poll AppArmor logs and display notifications
+-  -l		display stats since last login
+-  -s NUM	show stats for last NUM days (can be used alone or with -p)
+-  -v		show messages with stats
+-  -h		display this help
+-  -w NUM	wait NUM seconds before displaying notifications (with -p)
++  -p, --poll			poll AppArmor logs and display notifications
++  -f FILE, --file=FILE		search FILE for AppArmor messages
++  -l, --since-last		display stats since last login
++  -s NUM, --since-days=NUM	show stats for last NUM days (can be used alone
++				or with -p)
++  -v, --verbose			show messages with stats
++  -h, --help			display this help
++  -u USER, --user=USER		user to drop privileges to when not using sudo
++  -w NUM, --wait=NUM		wait NUM seconds before displaying
++				notifications (with -p)
+ EOF
+     print $s;
+ }
+ 
++sub reopen_logfile {
++    # reopen the logfile, temporarily switching back to starting euid for
++    # file permissions.
++    close(LOGFILE);
++
++    my $old_euid = $>;
++    my $change_euid = 0;
++    if ($> != $<) {
++        _debug("raising privileges to '$orig_euid' in reopen_logfile()");
++        $change_euid = 1;
++        $> = $orig_euid;
++        $> == $orig_euid or die "Could not raise privileges\n";
++    }
++
++    $logfile_inode = get_logfile_inode($logfile);
++    $logfile_size = get_logfile_size($logfile);
++    open (LOGFILE, "<$logfile") or die "Could not open '$logfile'\n";
++
++    if ($change_euid) {
++        _debug("dropping privileges to '$old_euid' in reopen_logfile()");
++        $> = $old_euid;
++        $> == $old_euid or die "Could not drop privileges\n";
++    }
++}
++
++sub get_logfile_size {
++    my $fn = $_[0];
++    my $size;
++    defined(($size = (stat($fn))[7])) or (sleep(10) and defined(($size = (stat($fn))[7])) or die "'$fn' disappeared. Aborting\n");
++    return $size;
++}
++
++sub get_logfile_inode {
++    my $fn = $_[0];
++    my $inode;
++    defined(($inode = (stat($fn))[1])) or (sleep(10) and defined(($inode = (stat($fn))[1])) or die "'$fn' disappeared. Aborting\n");
++    return $inode;
++}
++
+ #
+ # end Subroutines
+ #
+
+=== modified file 'utils/apparmor_notify.pod'
+--- utils/apparmor_notify.pod	2010-02-12 16:25:02 +0000
++++ utils/apparmor_notify.pod	2010-05-12 08:46:22 +0000
+@@ -40,24 +40,37 @@
+ 
+ =over 4
+ 
+-=item -p
++=item -p, --poll
+ 
+ poll AppArmor logs and display desktop notifications. Can be used with '-s'
+ option to display a summary on startup.
+ 
+-=item -l
++=item -f FILE, --file=FILE
++
++search FILE for AppArmor messages
++
++=item -l, --since-last
+ 
+ show summary since last login.
+ 
+-=item -s NUM
++=item -s NUM, --since-days=NUM
+ 
+ show summary for last NUM of days.
+ 
+-=item -v
++=item -u USER, --user=USER
++
++user to drop privileges to when running privileged. This has no effect when
++running under sudo.
++
++=item -w NUM, --wait=NUM
++
++wait NUM seconds before displaying notifications (for use with -p)
++
++=item -v, --verbose
+ 
+ show messages with summaries.
+ 
+-=item -h
++=item -h, --help
+ 
+ displays a short usage statement.
+ 
+
