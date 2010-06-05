@@ -1,3 +1,33 @@
+=== added file '.bzrignore'
+--- .bzrignore	1970-01-01 00:00:00 +0000
++++ .bzrignore	2010-06-05 01:39:20 +0000
+@@ -0,0 +1,25 @@
++parser/po/*.mo
++parser/af_names.h
++parser/cap_names.h
++parser/tst_misc
++parser/tst_regex
++parser/tst_symtab
++parser/tst_variable
++parser/parser_lex.c
++parser/parser_version.h
++parser/parser_yacc.c
++parser/parser_yacc.h
++parser/pod2htm*.tmp
++parser/*.7
++parser/*.5
++parser/*.8
++parser/*.7.html
++parser/*.5.html
++parser/*.8.html
++parser/common
++parser/apparmor_parser
++parser/libapparmor_re/regexp.cc
++parser/techdoc.aux
++parser/techdoc.log
++parser/techdoc.pdf
++parser/techdoc.toc
+
 === modified file 'libraries/libapparmor/swig/perl/Makefile.am'
 --- libraries/libapparmor/swig/perl/Makefile.am	2009-05-12 21:56:56 +0000
 +++ libraries/libapparmor/swig/perl/Makefile.am	2010-03-16 22:00:26 +0000
@@ -168,21 +198,211 @@
  extern int process_hat_variables(struct codomain *cod);
  extern int post_merge_rules(void);
 
+=== modified file 'parser/parser_include.c'
+--- parser/parser_include.c	2009-07-24 12:18:12 +0000
++++ parser/parser_include.c	2010-06-05 01:57:01 +0000
+@@ -1,8 +1,8 @@
+-/* $Id$ */
+-
+ /*
+  *   Copyright (c) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+  *   NOVELL (All rights reserved)
++ *   Copyright (c) 2010
++ *   Canonical, Ltd.
+  *
+  *   This program is free software; you can redistribute it and/or
+  *   modify it under the terms of version 2 of the GNU General Public
+@@ -14,7 +14,7 @@
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+- *   along with this program; if not, contact Novell, Inc.
++ *   along with this program; if not, contact Canonical, Ltd.
+  */
+ 
+ /* Handle subdomain includes, as a straight forward preprocessing phase.
+@@ -270,3 +270,63 @@
+ 	*s = 0;
+ 	return c;
+ }
++
++struct include_stack_t {
++	char *filename;
++	int lineno;
++	struct include_stack_t *next;
++};
++
++struct include_stack_t *include_stack_head = NULL;
++
++static void start_include_position(char *filename)
++{
++	if (current_filename)
++		free(current_filename);
++	current_filename = strdup(filename ? filename : "stdin");
++	current_lineno   = 0;
++}
++
++void push_include_stack(char *filename)
++{
++	struct include_stack_t *include = NULL;
++
++	include = malloc(sizeof(*include));
++	if (!include) {
++		perror("malloc of included file stack tracker");
++		/* failures in this area are non-fatal */
++		return;
++	}
++
++	include->filename  = strdup(current_filename);
++	include->lineno    = current_lineno;
++	include->next      = include_stack_head;
++	include_stack_head = include;
++
++	start_include_position(filename);
++}
++
++void pop_include_stack(void)
++{
++	struct include_stack_t *include = NULL;
++
++	if (!include_stack_head)
++		return;
++
++	include = include_stack_head;
++	include_stack_head = include->next;
++
++	if (current_filename)
++		free(current_filename);
++	current_filename = include->filename;
++	current_lineno   = include->lineno;
++	free(include);
++}
++
++void reset_include_stack(char *filename)
++{
++	while (include_stack_head)
++		pop_include_stack();
++
++	start_include_position(filename);
++}
+
+=== modified file 'parser/parser_include.h'
+--- parser/parser_include.h	2009-07-24 07:35:39 +0000
++++ parser/parser_include.h	2010-06-05 01:57:01 +0000
+@@ -1,8 +1,8 @@
+-/* $Id$ */
+-
+ /*
+  *   Copyright (c) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+  *   NOVELL (All rights reserved)
++ *   Copyright (c) 2010
++ *   Canonical, Ltd.
+  *
+  *   This program is free software; you can redistribute it and/or
+  *   modify it under the terms of version 2 of the GNU General Public
+@@ -14,13 +14,15 @@
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+- *   along with this program; if not, contact Novell, Inc.
++ *   along with this program; if not, contact Canonical, Ltd.
+  */
+ 
+ #ifndef PARSER_INCLUDE_H
+ #define PARSER_INCLUDE_H
+ 
+ extern int preprocess_only;
++extern int current_lineno;
++extern char *current_filename;
+ 
+ extern int add_search_dir(char *dir);
+ extern void init_base_dir(void);
+@@ -29,4 +31,8 @@
+ extern int do_include_preprocessing(char *profilename);
+ FILE *search_path(char *filename, char **fullpath);
+ 
++extern void push_include_stack(char *filename);
++extern void pop_include_stack(void);
++extern void reset_include_stack(char *filename);
++
+ #endif
+
 === modified file 'parser/parser_lex.l'
 --- parser/parser_lex.l	2010-03-09 05:49:16 +0000
-+++ parser/parser_lex.l	2010-03-12 09:50:26 +0000
-@@ -227,6 +227,7 @@
++++ parser/parser_lex.l	2010-06-05 01:57:01 +0000
+@@ -1,8 +1,8 @@
+-/* $Id$ */
+-
+ /*
+  *   Copyright (c) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+  *   NOVELL (All rights reserved)
++ *   Copyright (c) 2010
++ *   Canonical, Ltd.
+  *
+  *   This program is free software; you can redistribute it and/or
+  *   modify it under the terms of version 2 of the GNU General Public
+@@ -14,7 +14,7 @@
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+- *   along with this program; if not, contact Novell, Inc.
++ *   along with this program; if not, contact Canonical, Ltd.
+  */
+ 
+ /* Definitions section */
+@@ -49,7 +49,8 @@
+ #endif
+ #define NPDEBUG(fmt, args...)	/* Do nothing */
+ 
+-int current_lineno = 1;
++int current_lineno     = 0;
++char *current_filename = NULL;
+ 
+ struct ignored_suffix_t {
+ 	char * text;
+@@ -87,7 +88,8 @@
+ 	}
+ 
+ 	if (!include_file)
+-		yyerror(_("Could not open '%s'"), fullpath);
++		yyerror(_("Could not open '%s'"),
++                        fullpath ? fullpath: filename);
+ 
+         if (fstat(fileno(include_file), &my_stat))
+ 		yyerror(_("fstat failed for '%s'"), fullpath);
+@@ -95,6 +97,7 @@
+         if (S_ISREG(my_stat.st_mode)) {
+ 		yyin = include_file;
+ 		PDEBUG("Opened include \"%s\"\n", fullpath);
++		push_include_stack(fullpath);
+ 		yypush_buffer_state(yy_create_buffer( yyin, YY_BUF_SIZE ));
+         }
+ 
+@@ -139,8 +142,9 @@
+ 				yyerror(_("stat failed for '%s'"), dirent_path);
+ 			if (S_ISREG(my_stat.st_mode)) {
+ 				if (!(yyin = fopen(dirent_path,"r")))
+-					yyerror(_("Could not open '%s'"), filename);
+-				PDEBUG("Opened include \"%s\"\n", filename);
++					yyerror(_("Could not open '%s' in '%s'"), dirent_path, filename);
++				PDEBUG("Opened include \"%s\" in \"%s\"\n", dirent_path, filename);
++				push_include_stack(dirent_path);
+ 				yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+ 			}
+ 		}
+@@ -227,6 +231,8 @@
  }
  
  <<EOF>> {
 +	fclose(yyin);
++	pop_include_stack();
  	yypop_buffer_state();
  	if ( !YY_CURRENT_BUFFER ) yyterminate();
  }
 
 === modified file 'parser/parser_main.c'
 --- parser/parser_main.c	2010-01-28 01:20:13 +0000
-+++ parser/parser_main.c	2010-04-03 22:41:40 +0000
++++ parser/parser_main.c	2010-06-05 01:47:44 +0000
 @@ -4,6 +4,9 @@
   *   Copyright (c) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
   *   NOVELL (All rights reserved)
@@ -203,6 +423,27 @@
   */
  
  #include <stdio.h>
+@@ -85,8 +89,6 @@
+ char *profile_namespace = NULL;
+ int flag_changehat_version = FLAG_CHANGEHAT_1_5;
+ 
+-extern int current_lineno;
+-
+ /* per-profile settings */
+ int force_complain = 0;
+ char *profilename = NULL;
+@@ -224,8 +226,10 @@
+ 	if (conf_quiet || names_only || option == OPTION_REMOVE)
+ 		return;
+ 
+-	rc = asprintf(&newfmt, _("Warning (%s line %d): %s"),
++	rc = asprintf(&newfmt, _("Warning from %s (%s%sline %d): %s"),
+ 		      profilename ? profilename : "stdin",
++		      current_filename ? current_filename : "",
++		      current_filename ? " " : "",
+ 		      current_lineno,
+ 		      fmt);
+ 	if (!newfmt)
 @@ -258,7 +262,7 @@
  			break;
  		case 'd':
@@ -230,7 +471,31 @@
  			if (strcmp(optarg, "0") == 0) {
  				dfaflags |= DFA_CONTROL_NO_TREE_NORMAL |
  					DFA_CONTROL_NO_TREE_SIMPLE |
-@@ -812,7 +816,7 @@
+@@ -695,12 +699,13 @@
+ 	return retval;
+ }
+ 
+-void reset_parser(void)
++void reset_parser(char *filename)
+ {
+ 	free_aliases();
+ 	free_symtabs();
+ 	free_policies();
+ 	reset_regex();
++	reset_include_stack(filename);
+ }
+ 
+ int process_profile(int option, char *profilename)
+@@ -796,7 +801,7 @@
+ 
+ 	if (yyin)
+ 		yyrestart(yyin);
+-	reset_parser();
++	reset_parser(profilename);
+ 
+ 	retval = yyparse();
+ 	if (retval != 0)
+@@ -812,7 +817,7 @@
  		goto out;
  	}
  
@@ -362,6 +627,340 @@
  	char *value;
  	struct var_string *split_var;
 
+=== modified file 'parser/parser_yacc.y'
+--- parser/parser_yacc.y	2010-02-17 20:21:52 +0000
++++ parser/parser_yacc.y	2010-06-05 01:57:01 +0000
+@@ -1,9 +1,9 @@
+ %{
+-/* $Id$ */
+-
+ /*
+  *   Copyright (c) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+  *   NOVELL (All rights reserved)
++ *   Copyright (c) 2010
++ *   Canonical, Ltd.
+  *
+  *   This program is free software; you can redistribute it and/or
+  *   modify it under the terms of version 2 of the GNU General Public
+@@ -15,7 +15,7 @@
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+- *   along with this program; if not, contact Novell, Inc.
++ *   along with this program; if not, contact Canonical, Ltd.
+  */
+ 
+ #define YYERROR_VERBOSE 1
+@@ -32,6 +32,7 @@
+ /* #define DEBUG */
+ 
+ #include "parser.h"
++#include "parser_include.h"
+ #include <unistd.h>
+ #include <netinet/in.h>
+ #include <arpa/inet.h>
+@@ -63,10 +64,6 @@
+ 
+ #define CAP_TO_MASK(x) (1ull << (x))
+ 
+-/* from lex_config, for nice error messages */
+-/* extern char *current_file; */
+-extern int current_lineno;
+-
+ struct value_list {
+ 	char *value;
+ 	struct value_list *next;
+@@ -1109,10 +1106,15 @@
+ 	va_end(arg);
+ 
+ 	if (profilename) {
+-		PERROR(_("AppArmor parser error in %s at line %d: %s\n"),
+-		       profilename, current_lineno, buf);
++		PERROR(_("AppArmor parser error for %s%s%s at line %d: %s\n"),
++		       profilename,
++		       current_filename ? " in " : "",
++		       current_filename ? current_filename : "",
++		       current_lineno, buf);
+ 	} else {
+-		PERROR(_("AppArmor parser error, line %d: %s\n"),
++		PERROR(_("AppArmor parser error,%s%s line %d: %s\n"),
++		       current_filename ? " in " : "",
++		       current_filename ? current_filename : "",
+ 		       current_lineno, buf);
+ 	}
+ 
+
+=== modified file 'parser/tst/Makefile'
+--- parser/tst/Makefile	2006-12-15 08:10:25 +0000
++++ parser/tst/Makefile	2010-06-05 01:47:44 +0000
+@@ -1,8 +1,9 @@
+ #
+-# $Id$
+-#
+ PROVE=/usr/bin/prove
+ TESTS=simple.pl
++PARSER_DIR=..
++PARSER_BIN=apparmor_parser
++PARSER=$(PARSER_DIR)/$(PARSER_BIN)
+ 
+ ifeq ($(VERBOSE),1)
+   PROVE_ARG=-v
+@@ -10,9 +11,19 @@
+ 
+ all: tests
+ 
+-.PHONY: tests
+-tests: ../apparmor_parser
++.PHONY: tests error_output parser_sanity
++tests: error_output parser_sanity
++
++error_output: $(PARSER)
++	$(PARSER) -S -I errors >/dev/null errors/okay.sd
++	LANG=C $(PARSER) -S -I errors 2>&1 >/dev/null errors/single.sd | \
++		grep -q "AppArmor parser error for errors/single.sd in errors/single.sd at line 3: Could not open 'failure'"
++	LANG=C $(PARSER) -S -I errors 2>&1 >/dev/null errors/double.sd | \
++		grep -q "AppArmor parser error for errors/double.sd in errors/includes/busted at line 67: Could not open 'does-not-exist'"
++	@echo "Error Output: PASS"
++
++parser_sanity: $(PARSER)
+ 	$(Q)${PROVE} ${PROVE_ARG} ${TESTS}
+ 
+-../apparmor_parser:
+-	make -C .. apparmor_parser
++$(PARSER):
++	make -C $(PARSER_DIR) $(PARSER_BIN)
+
+=== modified file 'parser/tst/README'
+--- parser/tst/README	2006-06-01 17:02:28 +0000
++++ parser/tst/README	2010-06-05 01:47:44 +0000
+@@ -64,5 +64,3 @@
+     loop.
+ 
+ Otherwise, the profile is passed on as-is to the subdomain parser.
+-
+-$Id$ 
+
+=== added directory 'parser/tst/errors'
+=== added file 'parser/tst/errors/double.sd'
+--- parser/tst/errors/double.sd	1970-01-01 00:00:00 +0000
++++ parser/tst/errors/double.sd	2010-06-05 01:47:44 +0000
+@@ -0,0 +1,5 @@
++#
++/does/not/exist {
++  #include <includes/base>
++  #include <includes/busted>
++}
+
+=== added directory 'parser/tst/errors/includes'
+=== added file 'parser/tst/errors/includes/base'
+--- parser/tst/errors/includes/base	1970-01-01 00:00:00 +0000
++++ parser/tst/errors/includes/base	2010-06-05 01:47:44 +0000
+@@ -0,0 +1,81 @@
++# $Id$
++# ------------------------------------------------------------------
++#
++#    Copyright (C) 2002-2005 Novell/SUSE
++#
++#    This program is free software; you can redistribute it and/or
++#    modify it under the terms of version 2 of the GNU General Public
++#    License published by the Free Software Foundation.
++#
++# ------------------------------------------------------------------
++
++
++
++  # (Note that the ldd profile has inlined this file; if you make
++  # modifications here, please consider including them in the ldd
++  # profile as well.)
++
++  # The __canary_death_handler function writes a time-stamped log
++  # message to /dev/log for logging by syslogd. So, /dev/log, timezones,
++  # and localisations of date should be available EVERYWHERE, so
++  # StackGuard, FormatGuard, etc., alerts can be properly logged.
++  /dev/log                       w,
++  /dev/urandom                   r,
++  /etc/locale/**                 r,
++  /etc/localtime                 r,
++  /usr/share/locale/**           r,
++  /usr/share/zoneinfo/**         r,
++
++  /usr/lib64/locale/**           r,
++  /usr/lib64/gconv/*.so          r,
++  /usr/lib64/gconv/gconv-modules*  r,
++  /usr/lib/locale/**             r,
++  /usr/lib/gconv/*.so            r,
++  /usr/lib/gconv/gconv-modules*  r,
++
++  # used by glibc when binding to ephemeral ports
++  /etc/bindresvport.blacklist    r,
++
++  # ld.so.cache and ld are used to load shared libraries; they are best
++  # available everywhere
++  /etc/ld.so.cache               r,
++  # 'px' requires a profile to be available for the transition to
++  # function; without a loaded profile, the kernel will fail the exec.
++  /lib/ld-*.so                   px,
++  /lib64/ld-*.so                 px,
++  /opt/*-linux-uclibc/lib/ld-uClibc*so* px,
++
++  # we might as well allow everything to use common libraries
++  /lib/lib*.so*                  r,
++  /lib/tls/lib*.so*              r,
++  /lib/power4/lib*.so*           r,
++  /lib/power5/lib*.so*           r,
++  /lib/power5+/lib*.so*          r,
++  /lib64/power4/lib*.so*         r,
++  /lib64/power5/lib*.so*         r,
++  /lib64/power5+/lib*.so*        r,
++  /usr/lib/*.so*                 r,
++  /usr/lib/tls/lib*.so*          r,
++  /usr/lib/power4/lib*.so*       r,
++  /usr/lib/power5/lib*.so*       r,
++  /usr/lib/power5+/lib*.so*      r,
++  /lib64/lib*.so*                r,
++  /lib64/tls/lib*.so*            r,
++  /usr/lib64/*.so*               r,
++  /usr/lib64/tls/lib*.so*        r,
++
++  # /dev/null is pretty harmless and frequently used
++  /dev/null                      rw,
++  # as is /dev/zero
++  /dev/zero                      rw,
++
++  # Sometimes used to determine kernel/user interfaces to use
++  /proc/sys/kernel/version       r,
++  # Depending on which glibc routine uses this file, base may not be the
++  # best place -- but many profiles require it, and it is quite harmless.
++  /proc/sys/kernel/ngroups_max   r,
++
++  # glibc's sysconf(3) routine to determine free memory, etc
++  /proc/meminfo                  r,
++  /proc/stat                     r,
++  /proc/cpuinfo                  r,
+
+=== added file 'parser/tst/errors/includes/busted'
+--- parser/tst/errors/includes/busted	1970-01-01 00:00:00 +0000
++++ parser/tst/errors/includes/busted	2010-06-05 01:47:44 +0000
+@@ -0,0 +1,83 @@
++# $Id$
++# ------------------------------------------------------------------
++#
++#    Copyright (C) 2002-2005 Novell/SUSE
++#
++#    This program is free software; you can redistribute it and/or
++#    modify it under the terms of version 2 of the GNU General Public
++#    License published by the Free Software Foundation.
++#
++# ------------------------------------------------------------------
++
++
++
++  # (Note that the ldd profile has inlined this file; if you make
++  # modifications here, please consider including them in the ldd
++  # profile as well.)
++
++  # The __canary_death_handler function writes a time-stamped log
++  # message to /dev/log for logging by syslogd. So, /dev/log, timezones,
++  # and localisations of date should be available EVERYWHERE, so
++  # StackGuard, FormatGuard, etc., alerts can be properly logged.
++  /dev/log                       w,
++  /dev/urandom                   r,
++  /etc/locale/**                 r,
++  /etc/localtime                 r,
++  /usr/share/locale/**           r,
++  /usr/share/zoneinfo/**         r,
++
++  /usr/lib64/locale/**           r,
++  /usr/lib64/gconv/*.so          r,
++  /usr/lib64/gconv/gconv-modules*  r,
++  /usr/lib/locale/**             r,
++  /usr/lib/gconv/*.so            r,
++  /usr/lib/gconv/gconv-modules*  r,
++
++  # used by glibc when binding to ephemeral ports
++  /etc/bindresvport.blacklist    r,
++
++  # ld.so.cache and ld are used to load shared libraries; they are best
++  # available everywhere
++  /etc/ld.so.cache               r,
++  # 'px' requires a profile to be available for the transition to
++  # function; without a loaded profile, the kernel will fail the exec.
++  /lib/ld-*.so                   px,
++  /lib64/ld-*.so                 px,
++  /opt/*-linux-uclibc/lib/ld-uClibc*so* px,
++
++  # we might as well allow everything to use common libraries
++  /lib/lib*.so*                  r,
++  /lib/tls/lib*.so*              r,
++  /lib/power4/lib*.so*           r,
++  /lib/power5/lib*.so*           r,
++  /lib/power5+/lib*.so*          r,
++  /lib64/power4/lib*.so*         r,
++  /lib64/power5/lib*.so*         r,
++  /lib64/power5+/lib*.so*        r,
++  /usr/lib/*.so*                 r,
++  /usr/lib/tls/lib*.so*          r,
++  /usr/lib/power4/lib*.so*       r,
++  /usr/lib/power5/lib*.so*       r,
++  /usr/lib/power5+/lib*.so*      r,
++  /lib64/lib*.so*                r,
++  /lib64/tls/lib*.so*            r,
++  /usr/lib64/*.so*               r,
++  /usr/lib64/tls/lib*.so*        r,
++
++  #include <does-not-exist>
++
++  # /dev/null is pretty harmless and frequently used
++  /dev/null                      rw,
++  # as is /dev/zero
++  /dev/zero                      rw,
++
++  # Sometimes used to determine kernel/user interfaces to use
++  /proc/sys/kernel/version       r,
++  # Depending on which glibc routine uses this file, base may not be the
++  # best place -- but many profiles require it, and it is quite harmless.
++  /proc/sys/kernel/ngroups_max   r,
++
++  # glibc's sysconf(3) routine to determine free memory, etc
++  /proc/meminfo                  r,
++  /proc/stat                     r,
++  /proc/cpuinfo                  r,
+
+=== added file 'parser/tst/errors/okay.sd'
+--- parser/tst/errors/okay.sd	1970-01-01 00:00:00 +0000
++++ parser/tst/errors/okay.sd	2010-06-05 01:47:44 +0000
+@@ -0,0 +1,4 @@
++#
++/does/not/exist {
++  #include <includes/base>
++}
+
+=== added file 'parser/tst/errors/single.sd'
+--- parser/tst/errors/single.sd	1970-01-01 00:00:00 +0000
++++ parser/tst/errors/single.sd	2010-06-05 01:47:44 +0000
+@@ -0,0 +1,7 @@
++#
++#
++#include <failure>
++#
++/does/not/exist {
++  #include <includes/base>
++}
+
+=== modified file 'profiles/apparmor.d/abstractions/base'
+--- profiles/apparmor.d/abstractions/base	2010-01-03 21:16:38 +0000
++++ profiles/apparmor.d/abstractions/base	2010-06-05 00:43:11 +0000
+@@ -85,6 +85,9 @@
+   # some applications will display license information
+   /usr/share/common-licenses/**  r,
+ 
++  # glibc statvfs
++  @{PROC}/filesystems            r,
++
+   # Workaround https://launchpad.net/bugs/359338 until upstream handles stacked
+   # filesystems generally. This does not appreciably decrease security with
+   # Ubuntu profiles because the user is expected to have access to files owned
+
 === added file 'profiles/apparmor.d/abstractions/dbus-session'
 --- profiles/apparmor.d/abstractions/dbus-session	1970-01-01 00:00:00 +0000
 +++ profiles/apparmor.d/abstractions/dbus-session	2010-04-19 17:38:17 +0000
@@ -380,6 +979,40 @@
 +
 +  #include <abstractions/dbus>
 +  /usr/bin/dbus-launch Uxr,
+
+=== modified file 'profiles/apparmor.d/abstractions/fonts'
+--- profiles/apparmor.d/abstractions/fonts	2009-11-04 20:25:42 +0000
++++ profiles/apparmor.d/abstractions/fonts	2010-06-05 00:44:30 +0000
+@@ -15,6 +15,7 @@
+ 
+   /usr/lib/xorg/modules/fonts/**.so*    mr,
+ 
++  /usr/share/fonts/                     r,
+   /usr/share/fonts/**                   r,
+ 
+   /etc/fonts/**                         r,
+
+=== modified file 'profiles/apparmor.d/abstractions/freedesktop.org'
+--- profiles/apparmor.d/abstractions/freedesktop.org	2009-11-04 20:25:42 +0000
++++ profiles/apparmor.d/abstractions/freedesktop.org	2010-06-05 00:44:30 +0000
+@@ -27,3 +27,7 @@
+   @{HOME}/.icons/                 r,
+   @{HOME}/.recently-used.xbel*    rw,
+   @{HOME}/.config/user-dirs.dirs  r,
++  @{HOME}/.local/share/icons/     r,
++  @{HOME}/.local/share/icons/**   r,
++  @{HOME}/.local/share/mime/      r,
++  @{HOME}/.local/share/mime/**    r,
+
+=== modified file 'profiles/apparmor.d/abstractions/nameservice'
+--- profiles/apparmor.d/abstractions/nameservice	2009-11-04 20:25:42 +0000
++++ profiles/apparmor.d/abstractions/nameservice	2010-06-05 00:44:59 +0000
+@@ -77,3 +77,5 @@
+   network inet  dgram,
+   network inet6 dgram,
+ 
++  # interface details
++  @{PROC}/*/net/route r,
 
 === modified file 'profiles/apparmor.d/abstractions/php5'
 --- profiles/apparmor.d/abstractions/php5	2010-01-03 21:16:38 +0000
