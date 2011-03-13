@@ -4,13 +4,13 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	2.5
-Release:	6
+Version:	2.6.0
+Release:	1
 Epoch:		1
 License:	GPL
 Group:		Applications/System
-Source0:	http://kernel.org/pub/linux/security/apparmor/AppArmor-%{version}/AppArmor-%{version}.tgz
-# Source0-md5:	4a747d1a1f85cb272d55b52c7e8a4a02
+Source0:	http://launchpad.net/apparmor/2.6/%{version}/+download/apparmor-%{version}.tar.gz
+# Source0-md5:	3b4fb4186ac6440a03d8f2dcf188d4b4
 Source1:	%{name}.init
 Patch0:		%{name}-bzr.patch
 Patch1:		%{name}-rc.patch
@@ -37,8 +37,9 @@ Linuksa. Ten pakiet jest częścią zestawu narzędzi nazywanych
 SubDomain.
 
 %prep
-%setup -q -n AppArmor-%{version}
-%patch0 -p0
+%setup -q -n apparmor-%{version}
+# reenable when needed
+#%patch0 -p0
 cd parser
 %patch1 -p0
 
@@ -90,7 +91,6 @@ fi
 %{_sysconfdir}/apparmor/rc.apparmor.functions
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apparmor/subdomain.conf
 %attr(754,root,root) /etc/rc.d/init.d/apparmor
-#%attr(754,root,root) /etc/rc.d/init.d/aaeventd
 /subdomain
 /var/lib/apparmor
 %{_mandir}/man[578]/*.[578]*
