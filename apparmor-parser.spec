@@ -20,6 +20,8 @@ BuildRequires:	flex
 BuildRequires:	gettext-devel
 BuildRequires:	libcap-devel
 BuildRequires:	libstdc++-devel
+# for apparmor_profile which links statically sometimes
+BuildRequires:	libstdc++-static
 BuildRequires:	perl-Test-Harness
 BuildRequires:	perl-tools-devel
 BuildRequires:	perl-tools-pod
