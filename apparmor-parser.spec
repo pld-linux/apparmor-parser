@@ -5,7 +5,7 @@ Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	2.6.1
-Release:	2
+Release:	3
 Epoch:		1
 License:	GPL
 Group:		Applications/System
@@ -25,6 +25,9 @@ BuildRequires:	libstdc++-static
 BuildRequires:	perl-Test-Harness
 BuildRequires:	perl-tools-devel
 BuildRequires:	perl-tools-pod
+%if %{with tests}
+BuildRequires:	perl-Locale-gettext
+%endif
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -40,8 +43,7 @@ SubDomain.
 
 %prep
 %setup -q -n apparmor-%{version}
-# reenable when needed
-#%patch0 -p0
+%patch0 -p0
 %patch1 -p0
 
 %build
