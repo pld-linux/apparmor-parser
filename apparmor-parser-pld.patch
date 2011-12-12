@@ -14,7 +14,7 @@
  				COMPLAIN="-C"
  			fi
 -			$PARSER $ABSTRACTIONS $PARSER_ARGS $COMPLAIN "$profile" > /dev/null
-+			$PARSER $ABSTRACTIONS $PARSER_ARGS $PARSER_CUSTOM_ARGS $COMPLAIN "$profile" > /dev/null
++			$PARSER $ABSTRACTIONS $PARSER_ARGS $PARSER_CUSTOM_ARGS -W $COMPLAIN "$profile" > /dev/null
  			if [ $? -ne 0 ]; then
  				aa_log_failure_msg "$profile failed to load"
  				STATUS=1

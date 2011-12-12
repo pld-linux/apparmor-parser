@@ -5,7 +5,7 @@ Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	2.6.1
-Release:	3
+Release:	4
 Epoch:		1
 License:	GPL
 Group:		Applications/System
