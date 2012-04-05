@@ -1,14 +1,6 @@
 === modified file 'parser/rc.apparmor.functions'
 --- parser/rc.apparmor.functions	2011-06-01 14:52:35 +0000
 +++ parser/rc.apparmor.functions	2011-07-14 06:56:45 +0000
-@@ -198,6 +198,7 @@
- 			aa_log_skipped_msg "$profile"
- 			logger -t "AppArmor(init)" -p daemon.warn "Skipping profile $profile"
- 			STATUS=2
-+			continue
- 		elif [ "$skip" -ne 0 ]; then
- 			continue
- 		fi
 @@ -206,7 +207,7 @@
  			if force_complain "${profile}" ; then
  				COMPLAIN="-C"

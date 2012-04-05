@@ -4,16 +4,15 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	2.6.1
-Release:	5
+Version:	2.7.2
+Release:	1
 Epoch:		1
 License:	GPL
 Group:		Applications/System
-Source0:	http://launchpad.net/apparmor/2.6/%{version}/+download/apparmor-%{version}.tar.gz
-# Source0-md5:	e2dabce946cb8258834f90f0a6c87726
+Source0:	http://launchpad.net/apparmor/2.7/%{version}/+download/apparmor-%{version}.tar.gz
+# Source0-md5:	2863e85bdfdf9ee35b83db6721fed1f1
 Source1:	%{name}.init
-Patch0:		%{name}-bzr.patch
-Patch1:		%{name}-pld.patch
+Patch0:		%{name}-pld.patch
 URL:		http://apparmor.wiki.kernel.org/
 BuildRequires:	bison
 BuildRequires:	flex
@@ -44,15 +43,14 @@ SubDomain.
 %prep
 %setup -q -n apparmor-%{version}
 %patch0 -p0
-%patch1 -p0
 
 %build
-%{__make} -C parser main manpages \
+%{__make} -j1 -C parser \
 	CC="%{__cc}" \
 	CXX="%{__cxx}" \
 	CFLAGS="%{rpmcflags} %{rpmcppflags}"
 
-%{?with_tests:%{__make} -C parser tests}
+%{?with_tests:%{__make} -j1 -C parser tests}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -68,7 +66,7 @@ install *.5 $RPM_BUILD_ROOT%{_mandir}/man5
 install *.7 $RPM_BUILD_ROOT%{_mandir}/man7
 install *.8 $RPM_BUILD_ROOT%{_mandir}/man8
 
-%{__make} -C po install \
+%{__make} -j1 -C po install \
 	DESTDIR=$RPM_BUILD_ROOT \
 	NAME=%{name}
 
