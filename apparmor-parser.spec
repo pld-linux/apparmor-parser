@@ -1,6 +1,8 @@
-
-%bcond_without	tests
-
+#
+# Conditional build:
+%bcond_without	tests	# don't perform "make tests"
+%bcond_with	dynamic	# link libstdc++ and libgcc dynamically
+#
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
@@ -20,12 +22,12 @@ BuildRequires:	gettext-devel
 BuildRequires:	libcap-devel
 BuildRequires:	libstdc++-devel
 # for apparmor_profile which links statically sometimes
-BuildRequires:	libstdc++-static
-BuildRequires:	perl-Test-Harness
-BuildRequires:	perl-tools-devel
+%{!?with_dynamic:BuildRequires:	libstdc++-static}
 BuildRequires:	perl-tools-pod
 %if %{with tests}
 BuildRequires:	perl-Locale-gettext
+BuildRequires:	perl-Test-Harness
+BuildRequires:	perl-tools-devel
 %endif
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -48,9 +50,14 @@ SubDomain.
 %{__make} -j1 -C parser \
 	CC="%{__cc}" \
 	CXX="%{__cxx}" \
-	CFLAGS="%{rpmcflags} %{rpmcppflags}"
+	CFLAGS="%{rpmcflags} %{rpmcppflags}" \
+	%{?with_dynamic:AAREOBJECTS='$(AAREOBJECT)' AARE_LDFLAGS=}
 
-%{?with_tests:%{__make} -j1 -C parser tests}
+%if %{with tests}
+%{__make} -j1 -C parser tests \
+	CC="%{__cc}" \
+	%{?with_dynamic:AAREOBJECTS='$(AAREOBJECT)' AARE_LDFLAGS=-lstdc++}
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
