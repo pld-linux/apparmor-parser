@@ -9,7 +9,7 @@ Name:		apparmor-parser
 Version:	2.7.2
 Release:	1
 Epoch:		1
-License:	GPL
+License:	GPL v2
 Group:		Applications/System
 Source0:	http://launchpad.net/apparmor/2.7/%{version}/+download/apparmor-%{version}.tar.gz
 # Source0-md5:	2863e85bdfdf9ee35b83db6721fed1f1
@@ -101,4 +101,8 @@ fi
 %attr(754,root,root) /etc/rc.d/init.d/apparmor
 /subdomain
 /var/lib/apparmor
-%{_mandir}/man[578]/*.[578]*
+%{_mandir}/man5/apparmor.d.5*
+%{_mandir}/man5/apparmor.vim.5*
+%{_mandir}/man5/subdomain.conf.5*
+%{_mandir}/man7/apparmor.7*
+%{_mandir}/man8/apparmor_parser.8*
