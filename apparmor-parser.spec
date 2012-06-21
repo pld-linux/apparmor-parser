@@ -6,13 +6,13 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	2.7.2
+Version:	2.8.0
 Release:	1
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
-Source0:	http://launchpad.net/apparmor/2.7/%{version}/+download/apparmor-%{version}.tar.gz
-# Source0-md5:	2863e85bdfdf9ee35b83db6721fed1f1
+Source0:	http://launchpad.net/apparmor/2.8/%{version}/+download/apparmor-%{version}.tar.gz
+# Source0-md5:	eaf90c52992df3d205a753b2933595fe
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 URL:		http://apparmor.wiki.kernel.org/
