@@ -15,6 +15,7 @@ Source0:	http://launchpad.net/apparmor/2.8/%{version}/+download/apparmor-%{versi
 # Source0-md5:	bcc6bb56630b007d4ea5c9affe9d750d
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
+Patch1:		bison3.patch
 URL:		http://apparmor.wiki.kernel.org/
 BuildRequires:	bison
 BuildRequires:	flex
@@ -45,6 +46,7 @@ SubDomain.
 %prep
 %setup -q -n apparmor-%{version}
 %patch0 -p0
+%patch1 -p1
 
 %build
 %{__make} -j1 -C parser \

@@ -1,0 +1,10 @@
+--- apparmor-2.8.2/parser/libapparmor_re/parse.y~	2012-02-24 13:20:46.000000000 +0100
++++ apparmor-2.8.2/parser/libapparmor_re/parse.y	2013-11-04 21:52:32.975269560 +0100
+@@ -57,6 +56,7 @@
+ 
+ %pure-parser
+ /* %error-verbose */
++%lex-param {YYLEX_PARAM}
+ %parse-param {Node **root}
+ %parse-param {const char *text}
+ %name-prefix = "regex_"
