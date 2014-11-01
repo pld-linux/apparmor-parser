@@ -6,13 +6,13 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	2.8.3
+Version:	2.9.0
 Release:	1
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
-Source0:	http://launchpad.net/apparmor/2.8/%{version}/+download/apparmor-%{version}.tar.gz
-# Source0-md5:	43586e5096606e857fef45c49553e468
+Source0:	http://launchpad.net/apparmor/2.9/%{version}/+download/apparmor-%{version}.tar.gz
+# Source0-md5:	daaeb859452f793abfdafd33f88d3e90
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 URL:		http://apparmor.wiki.kernel.org/
@@ -51,12 +51,14 @@ SubDomain.
 	CC="%{__cc}" \
 	CXX="%{__cxx}" \
 	CFLAGS="%{rpmcflags} %{rpmcppflags}" \
-	%{?with_dynamic:AAREOBJECTS='$(AAREOBJECT)' AARE_LDFLAGS=}
+	%{?with_dynamic:AAREOBJECTS='$(AAREOBJECT)' AARE_LDFLAGS= AALIB=-lapparmor} \
+	USE_SYSTEM=1
 
 %if %{with tests}
 %{__make} -j1 -C parser tests \
 	CC="%{__cc}" \
-	%{?with_dynamic:AAREOBJECTS='$(AAREOBJECT)' AARE_LDFLAGS=-lstdc++}
+	%{?with_dynamic:AAREOBJECTS='$(AAREOBJECT)' AARE_LDFLAGS=-lstdc++ AALIB=-lapparmor} \
+	USE_SYSTEM=1
 %endif
 
 %install
@@ -102,7 +104,6 @@ fi
 /subdomain
 /var/lib/apparmor
 %{_mandir}/man5/apparmor.d.5*
-%{_mandir}/man5/apparmor.vim.5*
 %{_mandir}/man5/subdomain.conf.5*
 %{_mandir}/man7/apparmor.7*
 %{_mandir}/man8/apparmor_parser.8*
