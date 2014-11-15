@@ -19,10 +19,14 @@ URL:		http://apparmor.wiki.kernel.org/
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-devel
+BuildRequires:	libapparmor-devel
 BuildRequires:	libcap-devel
 BuildRequires:	libstdc++-devel
 # for apparmor_profile which links statically sometimes
-%{!?with_dynamic:BuildRequires:	libstdc++-static}
+%if %{without dynamic}
+BuildRequires:	libapparmor-static
+BuildRequires:	libstdc++-static
+%endif
 BuildRequires:	perl-tools-pod
 %if %{with tests}
 BuildRequires:	perl-Locale-gettext
