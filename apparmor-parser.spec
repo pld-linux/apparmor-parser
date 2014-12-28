@@ -18,7 +18,7 @@ Patch0:		%{name}-pld.patch
 URL:		http://apparmor.wiki.kernel.org/
 BuildRequires:	bison
 BuildRequires:	flex
-BuildRequires:	gettext-devel
+BuildRequires:	gettext-tools
 BuildRequires:	libapparmor-devel
 BuildRequires:	libcap-devel
 BuildRequires:	libstdc++-devel
