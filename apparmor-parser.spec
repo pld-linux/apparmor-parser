@@ -19,7 +19,7 @@ URL:		http://wiki.apparmor.net/
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-tools
-BuildRequires:	libapparmor-devel >= %{version}
+BuildRequires:	libapparmor-devel >= 1:%{version}
 BuildRequires:	libcap-devel
 BuildRequires:	libstdc++-devel
 # for apparmor_profile which links statically sometimes
