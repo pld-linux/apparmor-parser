@@ -6,13 +6,13 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	2.12
-Release:	2
+Version:	2.13
+Release:	1
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
-Source0:	http://launchpad.net/apparmor/2.12/%{version}.0/+download/apparmor-%{version}.tar.gz
-# Source0-md5:	49054f58042f8e51ea92cc866575a833
+Source0:	http://launchpad.net/apparmor/2.13/%{version}.0/+download/apparmor-%{version}.tar.gz
+# Source0-md5:	c6caefb0a558492082226c467f6954cb
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 # Drop when upstream does cache rebuild based on hash and not on mtime
@@ -31,6 +31,10 @@ BuildRequires:	libstdc++-static
 %endif
 BuildRequires:	perl-tools-pod
 %if %{with tests}
+%if %(test -e /sys/kernel/security/apparmor/features ; echo $?)
+# apparmor enabled kernel running and fs mounted
+BuildRequires:	/sys/kernel/security/apparmor/features
+%endif
 BuildRequires:	perl-Locale-gettext
 BuildRequires:	perl-Test-Harness
 BuildRequires:	perl-tools-devel
@@ -53,6 +57,10 @@ SubDomain.
 %patch0 -p0
 %patch1 -p1
 
+# avoid unnecessary rebuilding on install
+%{__sed} -i -e '/^\.PHONY: af_names.h/d' parser/Makefile
+%{__sed} -i -e '/^\.\(PHONY\|SILENT\): \$(AAREOBJECT)/d' parser/Makefile
+
 %build
 %{__make} -j1 -C parser \
 	CC="%{__cc}" \
@@ -70,23 +78,16 @@ SubDomain.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-cd parser
+install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,/lib/apparmor,/subdomain}
 
-install -d $RPM_BUILD_ROOT{%{_mandir}/man{5,7,8},%{_sysconfdir}/{apparmor,rc.d/init.d},/sbin,/subdomain,/var/lib/apparmor}
-
-install apparmor_parser $RPM_BUILD_ROOT/sbin
-install subdomain.conf $RPM_BUILD_ROOT%{_sysconfdir}/apparmor
-install rc.apparmor.functions $RPM_BUILD_ROOT%{_sysconfdir}/apparmor
-install %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/apparmor
-install *.5 $RPM_BUILD_ROOT%{_mandir}/man5
-install *.7 $RPM_BUILD_ROOT%{_mandir}/man7
-install *.8 $RPM_BUILD_ROOT%{_mandir}/man8
-
-%{__make} -j1 -C po install \
+%{__make} -C parser install \
 	DESTDIR=$RPM_BUILD_ROOT \
-	NAME=%{name}
+	DISTRO=systemd \
+	SYSTEMD_UNIT_DIR=$RPM_BUILD_ROOT%{systemdunitdir} \
+	USE_SYSTEM=1
 
-cd ..
+install %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/apparmor
+
 %find_lang %{name}
 
 %clean
@@ -103,14 +104,20 @@ fi
 %files -f %{name}.lang
 %defattr(644,root,root,755)
 %doc parser/README
+%attr(755,root,root) /sbin/aa-teardown
 %attr(755,root,root) /sbin/apparmor_parser
 %dir %{_sysconfdir}/apparmor
-%{_sysconfdir}/apparmor/rc.apparmor.functions
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apparmor/parser.conf
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apparmor/subdomain.conf
 %attr(754,root,root) /etc/rc.d/init.d/apparmor
-/subdomain
-/var/lib/apparmor
+%{systemdunitdir}/apparmor.service
+%dir /lib/apparmor
+/lib/apparmor/rc.apparmor.functions
+%attr(754,root,root) /lib/apparmor/apparmor.systemd
+%dir /subdomain
+%dir /var/lib/apparmor
 %{_mandir}/man5/apparmor.d.5*
 %{_mandir}/man5/subdomain.conf.5*
 %{_mandir}/man7/apparmor.7*
+%{_mandir}/man8/aa-teardown.8*
 %{_mandir}/man8/apparmor_parser.8*

@@ -63,7 +63,7 @@ log_end_msg() {
 	aa_log_end_msg $*
 }
 
-. /etc/apparmor/rc.apparmor.functions
+. /lib/apparmor/rc.apparmor.functions
 
 RETVAL=0
 case "$1" in
