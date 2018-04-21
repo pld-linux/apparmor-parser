@@ -1,6 +1,6 @@
 #
 # Conditional build:
-%bcond_without	tests	# don't perform "make tests"
+%bcond_with	tests	# don't perform "make tests"
 %bcond_with	dynamic	# link libstdc++ and libgcc dynamically
 #
 Summary:	AppArmor userlevel parser utility
