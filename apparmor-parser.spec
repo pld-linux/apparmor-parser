@@ -6,13 +6,13 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	2.13
+Version:	2.13.2
 Release:	1
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
-Source0:	http://launchpad.net/apparmor/2.13/%{version}.0/+download/apparmor-%{version}.tar.gz
-# Source0-md5:	c6caefb0a558492082226c467f6954cb
+Source0:	http://launchpad.net/apparmor/2.13/%{version}/+download/apparmor-%{version}.tar.gz
+# Source0-md5:	2439b35266b5a3a461b0a2dba6e863c3
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 # Drop when upstream does cache rebuild based on hash and not on mtime
@@ -104,8 +104,8 @@ fi
 %files -f %{name}.lang
 %defattr(644,root,root,755)
 %doc parser/README
-%attr(755,root,root) /sbin/aa-teardown
 %attr(755,root,root) /sbin/apparmor_parser
+%attr(755,root,root) %{_sbindir}/aa-teardown
 %dir %{_sysconfdir}/apparmor
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apparmor/parser.conf
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/apparmor/subdomain.conf
