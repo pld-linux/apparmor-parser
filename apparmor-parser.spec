@@ -7,7 +7,7 @@ Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
 Version:	2.13.4
-Release:	1
+Release:	2
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
@@ -17,6 +17,8 @@ Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 # Drop when upstream does cache rebuild based on hash and not on mtime
 Patch1:		%{name}-cache-rebuild.patch
+Patch2:		apparmor-2.13.4-make4.3.patch
+Patch3:		apparmor-2.13.4-run_variable.patch
 URL:		http://wiki.apparmor.net/
 BuildRequires:	bison
 BuildRequires:	flex
@@ -56,6 +58,8 @@ SubDomain.
 %setup -q -n apparmor-%{version}
 %patch0 -p0
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
 
 # avoid unnecessary rebuilding on install
 %{__sed} -i -e '/^\.PHONY: af_names.h/d' parser/Makefile
