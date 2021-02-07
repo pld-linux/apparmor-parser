@@ -1,13 +1,11 @@
-=== modified file 'parser/rc.apparmor.functions'
---- parser/rc.apparmor.functions~	2020-12-02 12:01:37.000000000 +0100
-+++ parser/rc.apparmor.functions	2021-02-07 15:19:11.388572849 +0100
-@@ -32,7 +32,7 @@
- # Some nice defines that we use
+--- apparmor-3.0.1/parser/parser.conf~	2020-12-02 12:01:37.000000000 +0100
++++ apparmor-3.0.1/parser/parser.conf	2021-02-07 18:55:26.427209119 +0100
+@@ -31,7 +31,7 @@
+ # match-string "pattern=aadfa audit perms=crwxamlk/ user::other"
  
- PARSER=/sbin/apparmor_parser
--PARSER_OPTS=
-+PARSER_OPTS="-W"
- # Suppress warnings when booting in quiet mode
- if [ "${QUIET:-no}" = yes ] || [ "${quiet:-n}" = y ]; then
- 	PARSER_OPTS="$PARSER_OPTS --quiet"
-
+ ## Turn creating/updating of the cache on by default
+-#write-cache
++write-cache
+ 
+ ## Show cache hits
+ #show-cache
