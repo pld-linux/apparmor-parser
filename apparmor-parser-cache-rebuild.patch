@@ -13,15 +13,14 @@ diff -ur apparmor-2.12.org/parser/parser_main.c apparmor-2.12/parser/parser_main
 diff -ur apparmor-2.12.org/parser/policy_cache.c apparmor-2.12/parser/policy_cache.c
 --- apparmor-2.12.org/parser/policy_cache.c	2017-12-24 09:48:31.000000000 +0100
 +++ apparmor-2.12/parser/policy_cache.c	2018-01-10 09:30:27.533641865 +0100
-@@ -78,6 +78,15 @@
+@@ -78,6 +78,14 @@
  	cache_tstamp = t;
  }
  
 +void cache_tstamp_final_check(void)
 +{
 +	if (tstamp_cmp(cache_tstamp, mru_policy_tstamp) != 0) {
-+		if (debug_cache)
-+			pwarn("%s: cache mtime is different than policy files mtimes\n", progname);
++		pwarn(WARN_CACHE, "%s: cache mtime is different than policy files mtimes\n", progname);
 +		mru_skip_cache = 1;
 +	}
 +}

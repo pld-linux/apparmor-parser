@@ -1,29 +1,13 @@
 === modified file 'parser/rc.apparmor.functions'
---- parser/rc.apparmor.functions	2011-06-01 14:52:35 +0000
-+++ parser/rc.apparmor.functions	2011-07-14 06:56:45 +0000
-@@ -206,7 +207,7 @@
- 			if force_complain "${profile}" ; then
- 				COMPLAIN="-C"
- 			fi
--			$PARSER $ABSTRACTIONS $PARSER_ARGS $COMPLAIN "$profile" > /dev/null
-+			$PARSER $ABSTRACTIONS $PARSER_ARGS $PARSER_CUSTOM_ARGS -W $COMPLAIN "$profile" > /dev/null
- 			if [ $? -ne 0 ]; then
- 				aa_log_failure_msg "$profile failed to load"
- 				STATUS=1
-
-=== modified file 'parser/subdomain.conf'
---- parser/subdomain.conf	2011-01-13 21:58:26 +0000
-+++ parser/subdomain.conf	2011-07-14 06:59:27 +0000
-@@ -23,6 +23,11 @@
- # Enable the AppArmor event daemon for reporting?
- APPARMOR_ENABLE_AAEVENTD="no"
+--- parser/rc.apparmor.functions~	2020-12-02 12:01:37.000000000 +0100
++++ parser/rc.apparmor.functions	2021-02-07 15:19:11.388572849 +0100
+@@ -32,7 +32,7 @@
+ # Some nice defines that we use
  
-+## Path:	System/AppArmor
-+## Description: Custom user flags for apparmor profile parser
-+#
-+PARSER_CUSTOM_ARGS=""
-+
- #SUBDOMAIN_MODULE_PANIC=XXX
- #This option controls how subdomain behaves when the init script attempts
- #to load the AppArmor module and fails.  There are 4 options
+ PARSER=/sbin/apparmor_parser
+-PARSER_OPTS=
++PARSER_OPTS="-W"
+ # Suppress warnings when booting in quiet mode
+ if [ "${QUIET:-no}" = yes ] || [ "${quiet:-n}" = y ]; then
+ 	PARSER_OPTS="$PARSER_OPTS --quiet"
 

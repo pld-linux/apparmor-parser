@@ -1,0 +1,11 @@
+--- apparmor/parser/base_cap_names.h~	2021-02-07 15:05:22.861787137 +0100
++++ apparmor/parser/base_cap_names.h	2021-02-07 15:33:32.728756353 +0100
+@@ -12,6 +12,8 @@
+ 
+ {"chown", CAP_CHOWN, NO_BACKMAP_CAP, CAPFLAG_BASE_FEATURE},
+ 
++{"context", CAP_CONTEXT, NO_BACKMAP_CAP, CAPFLAG_BASE_FEATURE},
++
+ {"dac_override", CAP_DAC_OVERRIDE, NO_BACKMAP_CAP, CAPFLAG_BASE_FEATURE},
+ 
+ {"dac_read_search", CAP_DAC_READ_SEARCH, NO_BACKMAP_CAP, CAPFLAG_BASE_FEATURE},
