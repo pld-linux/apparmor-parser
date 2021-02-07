@@ -80,7 +80,7 @@ SubDomain.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,/lib/apparmor}
+install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,/lib/apparmor,/var/cache/apparmor}
 
 %{__make} -C parser install \
 	DESTDIR=$RPM_BUILD_ROOT \
@@ -115,6 +115,7 @@ fi
 %dir /lib/apparmor
 /lib/apparmor/rc.apparmor.functions
 %attr(754,root,root) /lib/apparmor/apparmor.systemd
+%attr(700,root,root) %dir /var/cache/apparmor
 %dir /var/lib/apparmor
 %{_mandir}/man5/apparmor.d.5*
 %{_mandir}/man7/apparmor.7*
