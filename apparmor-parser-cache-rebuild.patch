@@ -1,7 +1,7 @@
-diff -ur apparmor-2.12.org/parser/parser_main.c apparmor-2.12/parser/parser_main.c
---- apparmor-2.12.org/parser/parser_main.c	2017-12-24 09:48:31.000000000 +0100
-+++ apparmor-2.12/parser/parser_main.c	2018-01-10 09:33:09.568033805 +0100
-@@ -811,6 +811,8 @@
+diff -urNp -x '*.orig' apparmor-3.0.1.org/parser/parser_main.c apparmor-3.0.1/parser/parser_main.c
+--- apparmor-3.0.1.org/parser/parser_main.c	2020-12-02 12:01:37.000000000 +0100
++++ apparmor-3.0.1/parser/parser_main.c	2021-04-01 22:28:09.569591753 +0200
+@@ -1102,6 +1102,8 @@ int process_profile(int option, aa_kerne
  		skip_cache = 1;
  
  	if (cachename) {
@@ -10,10 +10,10 @@ diff -ur apparmor-2.12.org/parser/parser_main.c apparmor-2.12/parser/parser_main
  		/* Load a binary cache if it exists and is newest */
  		if (cache_hit(cachename)) {
  			retval = process_binary(option, kernel_interface,
-diff -ur apparmor-2.12.org/parser/policy_cache.c apparmor-2.12/parser/policy_cache.c
---- apparmor-2.12.org/parser/policy_cache.c	2017-12-24 09:48:31.000000000 +0100
-+++ apparmor-2.12/parser/policy_cache.c	2018-01-10 09:30:27.533641865 +0100
-@@ -78,6 +78,14 @@
+diff -urNp -x '*.orig' apparmor-3.0.1.org/parser/policy_cache.c apparmor-3.0.1/parser/policy_cache.c
+--- apparmor-3.0.1.org/parser/policy_cache.c	2020-12-02 12:01:37.000000000 +0100
++++ apparmor-3.0.1/parser/policy_cache.c	2021-04-01 22:28:09.569591753 +0200
+@@ -75,6 +75,14 @@ void set_cache_tstamp(struct timespec t)
  	cache_tstamp = t;
  }
  
@@ -28,14 +28,14 @@ diff -ur apparmor-2.12.org/parser/policy_cache.c apparmor-2.12/parser/policy_cac
  void update_mru_tstamp(FILE *file, const char *name)
  {
  	struct stat stat_file;
-diff -ur apparmor-2.12.org/parser/policy_cache.h apparmor-2.12/parser/policy_cache.h
---- apparmor-2.12.org/parser/policy_cache.h	2017-12-24 09:48:31.000000000 +0100
-+++ apparmor-2.12/parser/policy_cache.h	2018-01-10 09:31:45.412419437 +0100
-@@ -39,6 +39,7 @@
+diff -urNp -x '*.orig' apparmor-3.0.1.org/parser/policy_cache.h apparmor-3.0.1/parser/policy_cache.h
+--- apparmor-3.0.1.org/parser/policy_cache.h	2020-12-02 12:01:37.000000000 +0100
++++ apparmor-3.0.1/parser/policy_cache.h	2021-04-01 22:28:09.569591753 +0200
+@@ -39,6 +39,7 @@ extern int mru_skip_cache;
  extern int debug_cache;
  
  void set_cache_tstamp(struct timespec t);
 +void cache_tstamp_final_check(void);
  void update_mru_tstamp(FILE *file, const char *path);
  bool valid_cached_file_version(const char *cachename);
- char *cache_filename(const char *cachedir, const char *basename);
+ char *cache_filename(aa_policy_cache *pc, int dir, const char *basename);
