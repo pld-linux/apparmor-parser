@@ -6,13 +6,13 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	3.0.4
+Version:	3.0.7
 Release:	1
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
 Source0:	http://launchpad.net/apparmor/3.0/%{version}/+download/apparmor-%{version}.tar.gz
-# Source0-md5:	5215a5751a90a45149c699fc3e61a6e8
+# Source0-md5:	4cab0b7abb751439dec2d0e956732f08
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 # Drop when upstream does cache rebuild based on hash and not on mtime
