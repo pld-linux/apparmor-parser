@@ -113,6 +113,7 @@ fi
 %attr(754,root,root) /etc/rc.d/init.d/apparmor
 %{systemdunitdir}/apparmor.service
 %dir /lib/apparmor
+%attr(755,root,root) /lib/apparmor/profile-load
 /lib/apparmor/rc.apparmor.functions
 %attr(754,root,root) /lib/apparmor/apparmor.systemd
 %attr(700,root,root) %dir /var/cache/apparmor
