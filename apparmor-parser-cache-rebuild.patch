@@ -20,7 +20,7 @@ diff -urNp -x '*.orig' apparmor-3.0.1.org/parser/policy_cache.c apparmor-3.0.1/p
 +void cache_tstamp_final_check(void)
 +{
 +	if (tstamp_cmp(cache_tstamp, mru_policy_tstamp) != 0) {
-+		pwarn(WARN_CACHE, "%s: cache mtime is different than policy files mtimes\n", progname);
++		pwarn(WARN_DEBUG_CACHE, "%s: cache mtime is different than policy files mtimes\n", progname);
 +		mru_skip_cache = 1;
 +	}
 +}
