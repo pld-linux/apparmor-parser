@@ -6,13 +6,13 @@
 Summary:	AppArmor userlevel parser utility
 Summary(pl.UTF-8):	Narzędzie przestrzeni użytkownika do przetwarzania AppArmor
 Name:		apparmor-parser
-Version:	3.0.8
+Version:	3.0.9
 Release:	1
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
 Source0:	http://launchpad.net/apparmor/3.0/%{version}/+download/apparmor-%{version}.tar.gz
-# Source0-md5:	4a836c7bd1a0c3d1392733afb6e06d73
+# Source0-md5:	b375c0b9e7bb31760ee50d2642f302d1
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 # Drop when upstream does cache rebuild based on hash and not on mtime
@@ -39,6 +39,7 @@ BuildRequires:	/sys/kernel/security/apparmor/features
 BuildRequires:	perl-Locale-gettext
 BuildRequires:	perl-Test-Harness
 BuildRequires:	perl-tools-devel
+Requires(post,preun): /sbin/chkconfig
 %endif
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
