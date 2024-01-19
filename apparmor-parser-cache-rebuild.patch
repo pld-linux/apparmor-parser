@@ -31,8 +31,8 @@ diff -urNp -x '*.orig' apparmor-3.0.1.org/parser/policy_cache.c apparmor-3.0.1/p
 diff -urNp -x '*.orig' apparmor-3.0.1.org/parser/policy_cache.h apparmor-3.0.1/parser/policy_cache.h
 --- apparmor-3.0.1.org/parser/policy_cache.h	2020-12-02 12:01:37.000000000 +0100
 +++ apparmor-3.0.1/parser/policy_cache.h	2021-04-01 22:28:09.569591753 +0200
-@@ -39,6 +39,7 @@ extern int mru_skip_cache;
- extern int debug_cache;
+@@ -38,6 +38,7 @@ extern int create_cache_dir;		/* create
+ extern int mru_skip_cache;
  
  void set_cache_tstamp(struct timespec t);
 +void cache_tstamp_final_check(void);
