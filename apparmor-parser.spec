@@ -11,14 +11,14 @@ Release:	1
 Epoch:		1
 License:	GPL v2
 Group:		Applications/System
-Source0:	http://launchpad.net/apparmor/3.1/%{version}/+download/apparmor-%{version}.tar.gz
+Source0:	https://launchpad.net/apparmor/3.1/%{version}/+download/apparmor-%{version}.tar.gz
 # Source0-md5:	eee581ab969f708f1e4c6f2847c0c7a6
 Source1:	%{name}.init
 Patch0:		%{name}-pld.patch
 # Drop when upstream does cache rebuild based on hash and not on mtime
 Patch1:		%{name}-cache-rebuild.patch
 Patch2:		cap.patch
-URL:		http://wiki.apparmor.net/
+URL:		https://wiki.apparmor.net/
 BuildRequires:	bison
 BuildRequires:	flex
 BuildRequires:	gettext-tools
